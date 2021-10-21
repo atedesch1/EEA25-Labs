@@ -17,6 +17,7 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 #include <string.h>
+#include "commit.h"
 
 // Constants
 #define BAUDRATE 57600
@@ -63,7 +64,8 @@ int main(void)
 	char response[10];
 	
 	if (isMaster) {
-		fprintf(&usart0_str,"<HASH> ***MASTER***\n");
+		fprintf(&usart0_str, "%s", hash);
+		fprintf(&usart0_str, " ***MASTER***\n");
 		while(1)
 		{
 			// Prints request prompt to USART0
@@ -88,7 +90,8 @@ int main(void)
 		PWMInitMode14();
 		ServosInit();
 		
-		fprintf(&usart0_str,"<HASH> ***SLAVE***\n");
+		fprintf(&usart0_str, "%s", hash);
+		fprintf(&usart0_str, " ***SLAVE***\n");
 		while(1)
 		{
 			// Prints request prompt
