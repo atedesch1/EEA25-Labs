@@ -558,39 +558,39 @@ I_CMC:		{CMC}  JMP BUSCA
 // Salta para o endereço a16 se o flag CARRY estiver ativado.
 // É implementada utilizando o X como auxiliar, efetuando X<--a16 seguido de PC<--X.
 MAP(0DA)	EQU I_JC_A16
-I_JC_A16:	{}   JMP_CARRY JCSALTAR
+I_JC_A16:	{}   JMP_CARRY JCSALTAR	// Pula para label JCSALTAR se CARRY estiver ativado
 		{INCPC}
 		{INCPC}	JMP BUSCA
 
 
 
-JCSALTAR:	{EPCA,ESA,MR,EED,LXL}
+JCSALTAR:	{EPCA,ESA,EED,MR,LXL}	// XL<--a16L {endereca memoria,saida de endereco,entrada de dados,memory read,carrega lowbyte}
 		{INCPC}
-		{EPCA,ESA,MR,EED,LXH}
-		{EXLD,LPCL}
-		{EXHD,LPCH} JMP BUSCA
+		{EPCA,ESA,EED,MR,LXH}	// XH<--a16H
+		{EXLD,LPCL}		// PCL<--XL {lowbyte para dados,dados para lowbyte}
+		{EXHD,LPCH} JMP BUSCA	// PCH<--XH
 
 
 
 // LXI	B,d16	; [01],[d16L],[d16H]
 // Essa instrução é codificada com a sequência de 3 bytes indicada acima.
-// Efetua BC<--a16, isto é, B<--a16H e C<--a16L.
+// Efetua BC<--d16, isto é, B<--d16H e C<--d16L.
 MAP(01)		EQU I_LXI_B_D16
 I_LXI_B_D16:	{}
-		{EPCA,ESA,EED,MR,LBCL}
+		{EPCA,ESA,EED,MR,LBCL}	// BCL<--d16L {endereca memoria,saida de endereco,entrada de dados,memory read,carrega lowbyte}
 		{INCPC}
-		{EPCA,ESA,EED,MR,LBCH}
+		{EPCA,ESA,EED,MR,LBCH}	// BCH<--d16H
 		{INCPC}	JMP BUSCA
 
 
 // LXI	D,d16	; [11],[d16L],[d16H]
 // Essa instrução é codificada com a sequência de 3 bytes indicada acima.
-// Efetua DE<--a16, isto é, D<--a16H e E<--a16L.
+// Efetua DE<--d16, isto é, D<--d16H e E<--d16L.
 MAP(11)		EQU I_LXI_D_D16
 I_LXI_D_D16:	{} 
-		{EPCA,ESA,EED,MR,LDEL}
+		{EPCA,ESA,EED,MR,LDEL}	// E<--d16L {endereca memoria,saida de endereco,entrada de dados,memory read,carrega lowbyte}
 		{INCPC}
-		{EPCA,ESA,EED,MR,LDEH}
+		{EPCA,ESA,EED,MR,LDEH}	// D<--d16H
 		{INCPC}	JMP BUSCA
 
 
@@ -598,8 +598,9 @@ I_LXI_D_D16:	{}
 // ADD	E	; [83]
 // Efetua A<--A+E afetando todos os flags.
 MAP(83)		EQU I_ADD_E
-I_ADD_E:	{EDELD,LT2}		// T2<--E
-		{ET2ULA,EAULA,EULA,LA,LCARRY,LACARRY,LZERO,LPARITY,LSIGNAL} JMP BUSCA
+I_ADD_E:	{EDELD,LT2}		// T2<--E {lowbyte para dados,dados para registrador 8bits}
+		{ET2ULA,EAULA,EULA,LA}	// ULA(T2,A)=>T2+A {registrador para ULA,registrador para ULA,executa operacao,resultado para registrador}
+		{LCARRY,LACARRY,LZERO,LPARITY,LSIGNAL} JMP BUSCA	// Habilita todos os flags
 
 
 
@@ -607,15 +608,18 @@ I_ADD_E:	{EDELD,LT2}		// T2<--E
 // Essa instrução é codificada com o byte indicado acima.
 // Efetua D<--A.
 MAP(5F)		EQU I_MOV_E_A
-I_MOV_E_A:	{EAD,LDEL}
+I_MOV_E_A:	{EAD,LDEL}		// DEL<--A {registrador para dados,carrega lowbyte}
 
 
 
 // ACI	d8	; [CE],[d8]
 // Efetua A<--A+d8+CARRY afetando todos os flags.
 MAP(0CE)	EQU I_ACI_d8
-I_ACI_d8:	{EPCA,ESA,EED,MR,LT2}
-		{ET2ULA,EAULA,OP0,EULA,LA,LCARRY,LACARRY,LZERO,LPARITY,LSIGNAL}
+I_ACI_d8:	{EPCA,ESA,EED,MR,LT2}	// T2<--d8 {endereca memoria,saida de endereco,entrada de dados,memory read,carrega registrador}
+		{ET2ULA,EAULA}		// ULA(T2,A) {registrador para ULA, registrador para ULA}
+		{OP0}			// F=T2+A+CARRY OP=(0,0,0,1)
+		{EULA,LA}		// A<--ULA(T2,A) {executa operacao, resultado para registrador}
+		{LCARRY,LACARRY,LZERO,LPARITY,LSIGNAL}			// Habilita todos os flags
 		{INCPC} JMP BUSCA
 
 
@@ -624,20 +628,25 @@ I_ACI_d8:	{EPCA,ESA,EED,MR,LT2}
 // Essa instrução é codificada com o byte indicado acima.
 // Efetua D<--A.
 MAP(57)		EQU I_MOV_D_A
-I_MOV_D_A:	{EAD,LDEH} JMP BUSCA
+I_MOV_D_A:	{EAD,LDEH} JMP BUSCA	// DEH<--A {registrador para dados,carrega highbyte}
 
 
 
 // DAD	D	; [19]
 // Efetua HL<--HL+DE afetando apenas o flag CARRY.
 MAP(19)		EQU I_DAD_D
-I_DAD_D:	{EDELD,LT1}
-		{EHLLD,LT2}
-		{ET1ULA,ET2ULA,EULA,LHLL,LCARRY}
+I_DAD_D:	{EDELD,LT1}		// T1<--E {lowbyte para dados,carrega registrador}
+		{EHLLD,LT2}		// T2<--L {lowbyte para dados,carrega registrador}
+		{ET1ULA,ET2ULA}		// ULA(T1,T2) {registrador para ULA, registrador para ULA}
+		{EULA,LHLL}		// L<--ULA(T1,T2) {executa operacao,resultado para lowbyte}
+		{LCARRY}		// {habilita flag carry}
 
-		{EDEHD,LT1}
-		{EHLHD,LT2}
-		{ET1ULA,ET2ULA,OP0,EULA,LHLH,LCARRY} JMP BUSCA
+		{EDEHD,LT1}		// T1<--D {highbyte para dados,carrega registrador}
+		{EHLHD,LT2}		// T2<--H {highbyte para dados,carrega registrador}
+		{ET1ULA,ET2ULA}		// ULA(T1,T2) {registrador para ULA, registrador para ULA}
+		{OP0}			// F=T1+T2+CARRY OP=(0,0,0,1)
+		{EULA,LHLH}		// H<--ULA(T1,T2) {executa operacao,resultado para highbyte}
+		{LCARRY} JMP BUSCA	// {habilita flag carry}
 		
 
 
@@ -645,7 +654,7 @@ I_DAD_D:	{EDELD,LT1}
 // Essa instrução é codificada com o byte indicado acima.
 // Carrega o registrador E com o dado da posição de memória apontada por HL.
 MAP(5E)		EQU I_MOV_E_M
-I_MOV_E_M:	{EHLA,ESA,EED,MR,LDEL} JMP BUSCA
+I_MOV_E_M:	{EHLA,ESA,EED,MR,LDEL} JMP BUSCA	// E<--M(HL) {endereca memoria,saida de endereco,entrada de dados,memory read,carrega lowbyte}
 
 
 
@@ -657,20 +666,20 @@ I_MOV_E_M:	{EHLA,ESA,EED,MR,LDEL} JMP BUSCA
 // DE <-- X:   DEH <-- XH;  DEL <-- XL.
 
 MAP(0EB)	EQU I_XCHG
-I_XCHG:		{EHLHD,LXH}
-		{EHLLD,LXL}
-		{EDEHD,LHLH}
-		{EDELD,LHLL}
-		{EXHD,LDEH}
-		{EXLD,LDEL}  JMP BUSCA
+I_XCHG:		{EHLHD,LXH}	// XH<--HLH {highbyte para dados,carrega highbyte}
+		{EHLLD,LXL}	// XL<--HLL {lowbyte para dados,carrega lowbyte}
+		{EDEHD,LHLH}	// HLH<--DEH {highbyte para dados,carrega highbyte}
+		{EDELD,LHLL}	// HLL<--DEL {lowbyte para dados,carrega lowbyte}
+		{EXHD,LDEH}	// DEH<--XH {highbyte para dados,carrega highbyte}
+		{EXLD,LDEL}  JMP BUSCA		// DEL<--XL {lowbyte para dados,carrega lowbyte}
 
 
 
 // PCHL		; [E9]
 // Efetua PC<--HL, isto é PCH<--H e PCL<--L.
 MAP(0E9)	EQU I_PCHL
-I_PCHL:		{EHLHD,LPCH}
-		{EHLLD,LPCL} JMP BUSCA
+I_PCHL:		{EHLHD,LPCH}	// PCH<--HLH {highbyte para dados,carrega highbyte}
+		{EHLLD,LPCL} JMP BUSCA		// PCL<--HLL {lowbyte para dados,carrega lowbyte}
 
 
 
