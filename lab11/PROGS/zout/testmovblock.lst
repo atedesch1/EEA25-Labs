@@ -1,0 +1,117 @@
+   1:				;*************************************************************************
+   2:				; testMOVBLOCK.ASM                                                       *
+   3:				;                                                                        *
+   4:				;    Programa teste para as instrucoess FILLBLOCK e MOVBLOCK.            *
+   5:				;                                                                        *
+   6:				;    FILLBLOCK e MOVBLOCK nao não são instrucoes do 8080/8085.           *
+   7:				;                                                                        *
+   8:				;      FILLBLOCK é codificada com o byte [08H]                           *
+   9:				;        Preenche BC posicoes da memoria, a partir do endereco HL        *
+  10:				;        com a constante A.                                              *
+  11:				;        Nao deixa efeitos colaterais em PSW,BC,DE e HL.                 *
+  12:				;                                                                        *
+  13:				;      MOVBLOCK é codificada com o byte [10H].                           *
+  14:				;        Copiar BC bytes a partir do endereco DE para o endereco HL.     *
+  15:				;        Nao deixa efeitos colaterais em PSW,BC,DE e HL.                 *
+  16:				;                                                                        *
+  17:				;    O programa assume um hardware dotado dos seguintes elementos:       *
+  18:				;                                                                        *
+  19:				;    - Processador MP8 (8080/8085 simile);                               *
+  20:				;    - ROM de 0000H a 1FFFh;                                             *
+  21:				;    - RAM de E000h a FFFFh;                                             *
+  22:				;    - UART 8250A vista nos enderecos 08H a 0Fh;                         *
+  23:				;    - PIO de entrada vista no endereço 00h;                             *
+  24:				;    - PIO de saída vista no endereço 00h.                               *
+  25:				;                                                                        *
+  26:				;    Para compilar e "linkar" o programa, pode ser usado o assembler     *
+  27:				;    "zmac", com a linha de comando:                                     *
+  28:				;                                                                        *
+  29:				;         "zmac -8 --oo lst,hex testmovblock.asm".                       *
+  30:				;                                                                        *
+  31:				;    zmac produzirá na pasta zout o arquivo "testmovblock.hex",          *
+  32:				;    imagem do código executável a ser carregado no projeto Proteus      *
+  33:				;    e também e também o arquivo de listagem "testmovblock.lst".         *
+  34:				;                                                                        *
+  35:				;*************************************************************************
+  36:				
+  37:				; Define origem da ROM e da RAM (este programa tem dois segmentos).
+  38:				; Diretivas nao podem comecar na primeira coluna.
+  39:				
+  40:     -	0000          	CODIGO		EQU	0000H
+  41:				
+  42:     -	E000          	DADOS		EQU	0E000H
+  43:				
+  44:     -	FFFF          	TOPO_RAM	EQU	0FFFFH
+  45:				
+  46:				;*******************************************
+  47:				; Definicao de macros par que zmac reconheca
+  48:				; novos mnemonicos de instrucao.
+  49:				;*******************************************
+  50:				
+  51:				FILLBLOCK	MACRO
+  52:						DB	08H
+  53:						ENDM	
+  54:				
+  55:				MOVBLOCK	MACRO
+  56:						DB	10H
+  57:						ENDM	
+  58:				
+  59:				LONGADD		MACRO
+  60:						DB	18H
+  61:						ENDM	
+  62:				
+  63:				LONGSUB		MACRO
+  64:						DB	20H
+  65:						ENDM	
+  66:				
+  67:				
+  68:				LONGCMP		MACRO
+  69:						DB	28H
+  70:						ENDM	
+  71:				
+  72:				JMP256		MACRO
+  73:						DB	0CBH
+  74:						ENDM
+  75:				
+  76:				;********************
+  77:				; Início do código  *
+  78:				;********************
+  79:				
+  80:     -	0000          		ORG	CODIGO
+  81:				
+  82:    0+10	0000  010001  	INICIO:         LXI	B,100H
+  83:   10+10	0003  2100E0  			LXI	H,DADOS
+  84:   20+7	0006  3E69    			MVI	A,69H
+  85:     -	0008  08      			FILLBLOCK	; Mem[HL..HL+BC]<--A
+  86:				
+  87:   27+10	0009  1100E0  			LXI	D,DADOS
+  88:   37+10	000C  2100E2  			LXI	H,DADOS+200H
+  89:     -	000F  10      			MOVBLOCK	; Mem[DE..DE+BC]<--Mem[HL..HL+BC]
+  90:				
+  91:   47+10	0010  C31000  		JMP $
+  92:						
+  93:				
+  94:				
+  95:     -	0000          	        END	INICIO
+
+
+
+Statistics:
+
+     3	passes
+     0	jr promotions
+     4	symbols
+    19	bytes
+
+     2	macro calls
+   103	macro bytes
+     0	invented symbols
+
+
+
+Symbol Table:
+
+CODIGO         =00        0
+DADOS          =E000      57344
+INICIO          00        0
+TOPO_RAM       =FFFF      65535

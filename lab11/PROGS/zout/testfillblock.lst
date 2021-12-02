@@ -1,0 +1,109 @@
+   1:				;*************************************************************************
+   2:				; testFILLBLOCK.ASM                                                      *
+   3:				;    Programa teste para instrução FILLBLOCK.                            *
+   4:				;    FILLBLOCK Nao faz parte do conjunto de instrucoes do 8080/8085.     *
+   5:				;                                                                        *
+   6:				;      FILLBLOCK codificada com o byte [08H]                             *
+   7:				;        Preenche BC posicoes da memoria, a partir do endereco HL        *
+   8:				;        com a constante A.                                              *
+   9:				;        Nao deixa efeitos colaterais em PSW,BC,DE e HL.                 *
+  10:				;                                                                        *
+  11:				;    O programa assume um hardware dotado dos seguintes elementos:       *
+  12:				;                                                                        *
+  13:				;    - Processador MP8 (8080/8085 simile);                               *
+  14:				;    - ROM de 0000H a 1FFFh;                                             *
+  15:				;    - RAM de E000h a FFFFh;                                             *
+  16:				;    - UART 8250A vista nos enderecos 08H a 0Fh;                         *
+  17:				;    - PIO de entrada vista no endereço 00h;                             *
+  18:				;    - PIO de saída vista no endereço 00h.                               *
+  19:				;                                                                        *
+  20:				;    Para compilar e "linkar" o programa, pode ser usado o assembler     *
+  21:				;    "zmac", com a linha de comando:                                     *
+  22:				;                                                                        *
+  23:				;         "zmac -8 --oo lst,hex testfillblock.asm".                      *
+  24:				;                                                                        *
+  25:				;    zmac produzirá na pasta zout o arquivo "testfillblock.hex",         *
+  26:				;    imagem do código executável a ser carregado no projeto Proteus      *
+  27:				;    e também o arquivo de listagem "testfillblock.lst".                 *
+  28:				;                                                                        *
+  29:				;*************************************************************************
+  30:				
+  31:				; Define origem da ROM e da RAM (este programa tem dois segmentos).
+  32:				; Diretivas nao podem comecar na primeira coluna.
+  33:				
+  34:     -	0000          	CODIGO		EQU	0000H
+  35:				
+  36:     -	E000          	DADOS		EQU	0E000H
+  37:				
+  38:     -	FFFF          	TOPO_RAM	EQU	0FFFFH
+  39:				
+  40:				;*******************************************
+  41:				; Definicao de macros par que zmac reconheca
+  42:				; novos mnemonicos de instrucao.
+  43:				;*******************************************
+  44:				
+  45:				FILLBLOCK	MACRO
+  46:						DB	08H
+  47:						ENDM	
+  48:				
+  49:				MOVBLOCK	MACRO
+  50:						DB	10H
+  51:						ENDM	
+  52:				
+  53:				LONGADD		MACRO
+  54:						DB	18H
+  55:						ENDM	
+  56:				
+  57:				LONGSUB		MACRO
+  58:						DB	20H
+  59:						ENDM	
+  60:				
+  61:				
+  62:				LONGCMP		MACRO
+  63:						DB	28H
+  64:						ENDM	
+  65:				
+  66:				JMP256		MACRO
+  67:						DB	0CBH
+  68:						ENDM
+  69:				
+  70:				;********************
+  71:				; Início do código  *
+  72:				;********************
+  73:				
+  74:     -	0000          		ORG	CODIGO
+  75:				
+  76:    0+10	0000  010001  	INICIO:         LXI	B,0100H
+  77:   10+10	0003  2100E0  			LXI	H,DADOS
+  78:   20+7	0006  3E69    			MVI	A,69H
+  79:				
+  80:				; Preenche BC posicoes de memória, a partir de HL,
+  81:				; com a constante A.
+  82:     -	0008  08      			FILLBLOCK
+  83:   27+10	0009  C30900  		JMP $
+  84:						
+  85:				
+  86:				
+  87:     -	0000          	        END	INICIO
+
+
+
+Statistics:
+
+     3	passes
+     0	jr promotions
+     4	symbols
+    12	bytes
+
+     1	macro calls
+   103	macro bytes
+     0	invented symbols
+
+
+
+Symbol Table:
+
+CODIGO         =00        0
+DADOS          =E000      57344
+INICIO          00        0
+TOPO_RAM       =FFFF      65535

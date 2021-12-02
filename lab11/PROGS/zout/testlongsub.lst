@@ -1,0 +1,138 @@
+   1:				;*************************************************************************
+   2:				; testLONGSUB.ASM                                                        *
+   3:				;                                                                        *
+   4:				;    Programa teste para a instrucão LONSUB.                             *
+   5:				;                                                                        *
+   6:				;    LONGSUB nao faz parte do conjunto instrucoes do 8080/8085.          *
+   7:				;                                                                        *
+   8:				;    LONGSUB é codifivada com o byte [20H].                              *
+   9:				;      Subtrai o numero de C bytes apontado por DE                       *
+  10:				;      do numero de C bytes apontado por HL e coloca o                   *
+  11:				;      o resultado a partir do endereço HL.                              *
+  12:				;      Os numeros são armazenados do byte mais significativo             *
+  13:				;      para o menos significativo. Afeta apenas CARRY.                   *
+  14:				;                                                                        *
+  15:				;    O programa assume um hardware dotado dos seguintes elementos:       *
+  16:				;                                                                        *
+  17:				;    - Processador MP8 (8080/8085 simile);                               *
+  18:				;    - ROM de 0000H a 1FFFh;                                             *
+  19:				;    - RAM de E000h a FFFFh;                                             *
+  20:				;    - UART 8250A vista nos enderecos 08H a 0Fh;                         *
+  21:				;    - PIO de entrada vista no endereço 00h;                             *
+  22:				;    - PIO de saída vista no endereço 00h.                               *
+  23:				;                                                                        *
+  24:				;    Para compilar e "linkar" o programa, pode ser usado o assembler     *
+  25:				;    "zmac", com a linha de comando:                                     *
+  26:				;                                                                        *
+  27:				;         "zmac -8 --oo lst,hex longsub.asm".                            *
+  28:				;                                                                        *
+  29:				;    zmac produzirá na pasta zout o arquivo "longsub.hex", imagem do     *
+  30:				;    código executável a ser carregado no projeto Proteus e também       *
+  31:				;    e também o arquivo de listagem "longsub.lst".                       *
+  32:				;                                                                        *
+  33:				;*************************************************************************
+  34:				
+  35:				; Define origem da ROM e da RAM (este programa tem dois segmentos).
+  36:				; Diretivas nao podem comecar na primeira coluna.
+  37:				
+  38:     -	0000          	CODIGO		EQU	0000H
+  39:				
+  40:     -	E000          	DADOS		EQU	0E000H
+  41:				
+  42:     -	FFFF          	TOPO_RAM	EQU	0FFFFH
+  43:				
+  44:				;*******************************************
+  45:				; Definicao de macros par que zmac reconheca
+  46:				; novos mnemonicos de instrucao.
+  47:				;*******************************************
+  48:				
+  49:				FILLBLOCK	MACRO
+  50:						DB	08H
+  51:						ENDM	
+  52:				
+  53:				MOVBLOCK	MACRO
+  54:						DB	10H
+  55:						ENDM	
+  56:				
+  57:				LONGADD		MACRO
+  58:						DB	18H
+  59:						ENDM	
+  60:				
+  61:				LONGSUB		MACRO
+  62:						DB	20H
+  63:						ENDM	
+  64:				
+  65:				
+  66:				LONGCMP		MACRO
+  67:						DB	28H
+  68:						ENDM	
+  69:				
+  70:				JMP256		MACRO
+  71:						DB	0CBH
+  72:						ENDM
+  73:				
+  74:				;********************
+  75:				; Início do código  *
+  76:				;********************
+  77:				
+  78:     -	0000          		ORG	CODIGO
+  79:				
+  80:    0+10	0000  010800  	INICIO:         LXI	B,8
+  81:   10+10	0003  112400  			LXI	D,CONSTANTE1
+  82:   20+10	0006  2100E0  			LXI	H,PARCELA1
+  83:     -	0009  10      			MOVBLOCK
+  84:				
+  85:   30+10	000A  112C00  			LXI	D,CONSTANTE2
+  86:   40+10	000D  2108E0  			LXI	H,PARCELA2
+  87:     -	0010  10      			MOVBLOCK
+  88:				
+  89:   50+10	0011  010800  			LXI	B,8
+  90:   60+10	0014  1100E0  			LXI	D,PARCELA1
+  91:   70+10	0017  2108E0  			LXI	H,PARCELA2
+  92:				
+  93:				; Efetua Mem[HL..HL+(C-1)]<--Mem[HL..HL+(C-1)]-Mem[DE..DE+(C-1)].
+  94:     -	001A  20      	REP_LONGSUB:	LONGSUB
+  95:   80+10	001B  C32100  			JMP	STOP_LONGSUB
+  96:   90+10	001E  C31A00  			JMP	REP_LONGSUB
+  97:				
+  98:  100+10	0021  C32100  	STOP_LONGSUB:	JMP	$
+  99:				
+ 100:     -	0024  00000000	CONSTANTE1:	DB	00H,00H,00H,00H,00H,0FEH,0DCH,0BAH	 
+	              00FEDCBA
+ 101:     -	002C  00000000	CONSTANTE2:	DB	00H,00H,00H,00H,00H,0ABH,0CDH,0EFH
+	              00ABCDEF
+ 102:				
+ 103:				
+ 104:     -	E000          		ORG	DADOS
+ 105:     -	E000          	PARCELA1:	DS	8
+ 106:     -	E008          	PARCELA2:	DS	8
+ 107:				
+ 108:     -	0000          	        END	INICIO
+
+
+
+Statistics:
+
+     4	passes
+     0	jr promotions
+    10	symbols
+    52	bytes
+
+     3	macro calls
+   103	macro bytes
+     0	invented symbols
+
+
+
+Symbol Table:
+
+CODIGO         =00        0
+CONSTANTE1      24        36
+CONSTANTE2      2C        44
+DADOS          =E000      57344
+INICIO          00        0
+PARCELA1        E000      57344
+PARCELA2        E008      57352
+REP_LONGSUB     1A        26
+STOP_LONGSUB    21        33
+TOPO_RAM       =FFFF      65535

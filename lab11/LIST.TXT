@@ -1,0 +1,2026 @@
+     1                                  //****************************************************
+     2                                  //  Microprograma para emulacao do processador MP8   *
+     3                                  //****************************************************
+     4  
+     5                                  //*************************
+     6                                  //  Declaração de sinais  *
+     7                                  //*****************************************
+     8                                  //                                        *
+     9  
+    10                                  //  Sinais para controle da ULA.
+    11  Sinais criados com sucesso.     FIELD {EULA,OP0,OP1,OP2,OP3}
+    12  
+    13                                  //  Sinais para controle do gerador de constantes.
+    14  Sinais criados com sucesso.     FIELD {EK,SK0,SK1}
+    15  
+    16                                  //  Sinais para controle do registrador de flags.
+    17  Sinais criados com sucesso.     FIELD {CLEARCARRY,SETCARRY,CMC,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LFLAGS,EFLAGS}
+    18  
+    19                                  //  Sinais para controle do Registrador Acumulador (A).
+    20  Sinais criados com sucesso.     FIELD {EAD,EAULA,LA}
+    21  
+    22                                  //  Sinais para controle do Registrador T1.
+    23  Sinais criados com sucesso.     FIELD {ET1D,ET1ULA,LT1}
+    24  
+    25                                  //  Sinais para controle do Registrador T2.
+    26  Sinais criados com sucesso.     FIELD {ET2D,ET2ULA,LT2}
+    27  
+    28                                  //  Sinais para controle do Registrador T3.
+    29  Sinais criados com sucesso.     FIELD {ET3D,ET3ULA,LT3}
+    30  
+    31                                  //  Sinais para controle do Registrador SP.
+    32  Sinais criados com sucesso.     FIELD {INCSP,DECSP,LSPH,LSPL,ESPHD,ESPLD,ESPA}
+    33  
+    34                                  //  Sinais para controle do Registrador PC.
+    35  Sinais criados com sucesso.     FIELD {INCPC,LPCH,LPCL,EPCHD,EPCLD,EPCA}
+    36  
+    37                                  //  Sinais para controle do Registrador BC.
+    38  Sinais criados com sucesso.     FIELD {INCBC,DECBC,LBCH,LBCL,EBCHD,EBCLD,EBCA}
+    39  
+    40                                  //  Sinais para controle do Registrador DE.
+    41  Sinais criados com sucesso.     FIELD {INCDE,DECDE,LDEH,LDEL,EDEHD,EDELD,EDEA}
+    42  
+    43                                  //  Sinais para controle do Registrador HL.
+    44  Sinais criados com sucesso.     FIELD {INCHL,DECHL,LHLH,LHLL,EHLHD,EHLLD,EHLA}
+    45  
+    46                                  //  Sinaid para controle do Registrador X.
+    47  Sinais criados com sucesso.     FIELD {INCX,DECX,LXH,LXL,EXHD,EXLD,EXA}
+    48  
+    49                                  //  Sinais para controle do Registrador Y.
+    50  Sinais criados com sucesso.     FIELD {INCY,DECY,LYH,LYL,EYHD,EYLD,EYA}
+    51  
+    52                                  //  Sinais para controle do Registrador Z.
+    53  Sinais criados com sucesso.     FIELD {INCZ,DECZ,LZH,LZL,EZHD,EZLD,EZA}
+    54  
+    55                                  //  Sinais para controle do Registrador de Instrucoes (I).
+    56  Sinais criados com sucesso.     FIELD {LI,EID}
+    57  
+    58                                  //  Sinais para controle dos buffers para o exterior.
+    59  Sinais criados com sucesso.     FIELD {ESD,EED,ESA}
+    60  
+    61                                  //  Sinais para controle da Memoria e das Portas de IO.
+    62  Sinais criados com sucesso.     FIELD {MR,MW,IOR,IOW}
+    63  
+    64                                  //                                        *
+    65                                  //*****************************************
+    66  
+    67  
+    68                                  //*******************
+    69                                  //  Microprograma   *
+    70                                  //*****************************************
+    71                                  //                                        *
+    72  
+    73  0000  00 00 00 00 00 00 00 00   INICIO:		{EK,LPCH,LPCL}
+              00 00 00 c0 00 00 00 20
+    74  0001  e0 00 05 00 07 20 00 00   BUSCA:		{EPCA,ESA,EED,MR,LI} JMP_IRUN EXECUTA
+              00 00 04 00 00 00 00 00
+    75  0002  e4 00 02 00 00 00 00 00   ESPERA_ZERO:	{} JMP_ISTEP ESPERA_ZERO
+              00 00 00 00 00 00 00 00
+    76  0003  e4 00 05 00 00 00 00 00   ESPERA_UM:	{} JMP_ISTEP EXECUTA
+              00 00 00 00 00 00 00 00
+    77  0004  c0 00 03 00 00 00 00 00   		{} JMP ESPERA_UM
+              00 00 00 00 00 00 00 00
+    78  
+    79  0005  80 00 00 00 00 00 00 00   EXECUTA:	{INCPC}				JMP_MAP
+              00 00 00 20 00 00 00 00
+    80  
+    81  
+    82                                  //*********************************************
+    83                                  //  Instrucoes de movimentacao de dado imediato
+    84                                  //*********************************************
+    85  0006  0006                      MAP(06)		EQU I_MVI_B_D8
+    86  000e  0008                      MAP(0E)		EQU I_MVI_C_D8
+    87  0016  000a                      MAP(16)		EQU I_MVI_D_D8
+    88  001e  000c                      MAP(1E)		EQU I_MVI_E_D8
+    89  0026  000e                      MAP(26)		EQU I_MVI_H_D8
+    90  002e  0010                      MAP(2E)		EQU I_MVI_L_D8
+    91  0036  0012                      MAP(36)		EQU I_MVI_M_D8
+    92  003e  0014                      MAP(3E)		EQU I_MVI_A_D8
+    93  
+    94  0006  00 00 00 00 07 00 00 00   I_MVI_B_D8:	{EPCA,ESA,EED,MR,LBCH}
+              00 00 24 00 00 00 00 00
+    95  0007  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+    96  
+    97  0008  00 00 00 00 07 00 00 00   I_MVI_C_D8:	{EPCA,ESA,EED,MR,LBCL}
+              00 00 44 00 00 00 00 00
+    98  0009  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+    99  
+   100  000a  00 00 00 00 07 00 00 00   I_MVI_D_D8:	{EPCA,ESA,EED,MR,LDEH}
+              00 10 04 00 00 00 00 00
+   101  000b  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   102  
+   103  000c  00 00 00 00 07 00 00 00   I_MVI_E_D8:	{EPCA,ESA,EED,MR,LDEL}
+              00 20 04 00 00 00 00 00
+   104  000d  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   105  
+   106  000e  00 00 00 00 07 00 00 00   I_MVI_H_D8:	{EPCA,ESA,EED,MR,LHLH}
+              08 00 04 00 00 00 00 00
+   107  000f  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   108  
+   109  0010  00 00 00 00 07 00 00 00   I_MVI_L_D8:	{EPCA,ESA,EED,MR,LHLL}
+              10 00 04 00 00 00 00 00
+   110  0011  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   111  
+   112  0012  00 00 00 00 07 00 00 00   I_MVI_M_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   113  0013  c0 00 01 00 0a 80 00 00   		{ET2D,ESD,EHLA,ESA,MW,INCPC}	JMP BUSCA
+              80 00 00 20 01 00 00 00
+   114  
+   115  0014  00 00 00 00 07 00 00 00   I_MVI_A_D8:	{EPCA,ESA,EED,MR,LA}
+              00 00 04 00 00 10 00 00
+   116  0015  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   117  
+   118  
+   119                                  //*****************************
+   120                                  //  Operacoes com dado imediato
+   121                                  //*****************************
+   122  00c6  0016                      MAP(0C6)	EQU I_ADI_D8
+   123  00ce  0018                      MAP(0CE)	EQU I_ACI_D8
+   124  00d6  001a                      MAP(0D6)	EQU I_SUI_D8
+   125  00de  001c                      MAP(0DE)	EQU I_SBI_D8
+   126  00e6  001e                      MAP(0E6)	EQU I_ANI_D8
+   127  00ee  0020                      MAP(0EE)	EQU I_XRI_D8
+   128  00f6  0022                      MAP(0F6)	EQU I_ORI_D8
+   129  00fe  0024                      MAP(0FE)	EQU I_CPI_D8
+   130  
+   131  0016  00 00 00 00 07 00 00 00   I_ADI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   132  0017  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA,INCPC}		JMP BUSCA
+              00 00 00 20 02 18 f8 01
+   133  
+   134  0018  00 00 00 00 07 00 00 00   I_ACI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   135  0019  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP0,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA,INCPC}		JMP BUSCA
+              00 00 00 20 02 18 f8 03
+   136  
+   137  001a  00 00 00 00 07 00 00 00   I_SUI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   138  001b  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP1,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA,INCPC}		JMP BUSCA
+              00 00 00 20 02 18 f8 05
+   139  
+   140  001c  00 00 00 00 07 00 00 00   I_SBI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   141  001d  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP1,OP0,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA,INCPC}	JMP BUSCA
+              00 00 00 20 02 18 f8 07
+   142  
+   143  001e  00 00 00 00 07 00 00 00   I_ANI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   144  001f  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP2,OP0,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA,INCPC}	JMP BUSCA
+              00 00 00 20 02 18 f8 0b
+   145  
+   146  0020  00 00 00 00 07 00 00 00   I_XRI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   147  0021  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP2,OP1,OP0,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA,INCPC}	JMP BUSCA
+              00 00 00 20 02 18 f8 0f
+   148  
+   149  0022  00 00 00 00 07 00 00 00   I_ORI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   150  0023  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP2,OP1,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA,INCPC}	JMP BUSCA
+              00 00 00 20 02 18 f8 0d
+   151  
+   152  0024  00 00 00 00 07 00 00 00   I_CPI_D8:	{EPCA,ESA,EED,MR,LT2}
+              00 00 04 00 04 00 00 00
+   153  0025  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP1,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,INCPC}		JMP BUSCA
+              00 00 00 20 02 08 f8 05
+   154  
+   155  
+   156                                  //************************************
+   157                                  //  Instrucoes de movimentacao de dado
+   158                                  //************************************
+   159  0040  0026                      MAP(40)		EQU I_MOV_B_B
+   160  0041  0027                      MAP(41)		EQU I_MOV_B_C
+   161  0042  0028                      MAP(42)		EQU I_MOV_B_D
+   162  0043  0029                      MAP(43)		EQU I_MOV_B_E
+   163  0044  002a                      MAP(44)		EQU I_MOV_B_H
+   164  0045  002b                      MAP(45)		EQU I_MOV_B_L
+   165  0046  002c                      MAP(46)		EQU I_MOV_B_M
+   166  0047  002d                      MAP(47)		EQU I_MOV_B_A
+   167  
+   168  0026  c0 00 01 00 00 00 00 00   I_MOV_B_B:	{}			JMP BUSCA
+              00 00 00 00 00 00 00 00
+   169  
+   170  0027  c0 00 01 00 00 00 00 00   I_MOV_B_C:	{EBCLD,LBCH}		JMP BUSCA
+              00 01 20 00 00 00 00 00
+   171  
+   172  0028  c0 00 01 00 00 00 00 00   I_MOV_B_D:	{EDEHD,LBCH}		JMP BUSCA
+              00 40 20 00 00 00 00 00
+   173  
+   174  0029  c0 00 01 00 00 00 00 00   I_MOV_B_E:	{EDELD,LBCH}		JMP BUSCA
+              00 80 20 00 00 00 00 00
+   175  
+   176  002a  c0 00 01 00 00 00 00 00   I_MOV_B_H:	{EHLHD,LBCH}		JMP BUSCA
+              20 00 20 00 00 00 00 00
+   177  
+   178  002b  c0 00 01 00 00 00 00 00   I_MOV_B_L:	{EHLLD,LBCH}		JMP BUSCA
+              40 00 20 00 00 00 00 00
+   179  
+   180  002c  c0 00 01 00 07 00 00 00   I_MOV_B_M:	{EHLA,ESA,EED,MR,LBCH}	JMP BUSCA
+              80 00 20 00 00 00 00 00
+   181  
+   182  002d  c0 00 01 00 00 00 00 00   I_MOV_B_A:	{EAD,LBCH}		JMP BUSCA
+              00 00 20 00 00 04 00 00
+   183  
+   184  0048  002e                      MAP(48)		EQU I_MOV_C_B
+   185  0049  002f                      MAP(49)		EQU I_MOV_C_C
+   186  004a  0030                      MAP(4A)		EQU I_MOV_C_D
+   187  004b  0031                      MAP(4B)		EQU I_MOV_C_E
+   188  004c  0032                      MAP(4C)		EQU I_MOV_C_H
+   189  004d  0033                      MAP(4D)		EQU I_MOV_C_L
+   190  004e  0034                      MAP(4E)		EQU I_MOV_C_M
+   191  004f  0035                      MAP(4F)		EQU I_MOV_C_A
+   192  
+   193  002e  c0 00 01 00 00 00 00 00   I_MOV_C_B:	{EBCHD,LBCL}		JMP BUSCA
+              00 00 c0 00 00 00 00 00
+   194  
+   195  002f  c0 00 01 00 00 00 00 00   I_MOV_C_C:	{}			JMP BUSCA
+              00 00 00 00 00 00 00 00
+   196  
+   197  0030  c0 00 01 00 00 00 00 00   I_MOV_C_D:	{EDEHD,LBCL}		JMP BUSCA
+              00 40 40 00 00 00 00 00
+   198  
+   199  0031  c0 00 01 00 00 00 00 00   I_MOV_C_E:	{EDELD,LBCL}		JMP BUSCA
+              00 80 40 00 00 00 00 00
+   200  
+   201  0032  c0 00 01 00 00 00 00 00   I_MOV_C_H:	{EHLHD,LBCL}		JMP BUSCA
+              20 00 40 00 00 00 00 00
+   202  
+   203  0033  c0 00 01 00 00 00 00 00   I_MOV_C_L:	{EHLLD,LBCL}		JMP BUSCA
+              40 00 40 00 00 00 00 00
+   204  
+   205  0034  c0 00 01 00 07 00 00 00   I_MOV_C_M:	{EHLA,ESA,EED,MR,LBCL}	JMP BUSCA
+              80 00 40 00 00 00 00 00
+   206  
+   207  0035  c0 00 01 00 00 00 00 00   I_MOV_C_A:	{EAD,LBCL}		JMP BUSCA
+              00 00 40 00 00 04 00 00
+   208  
+   209  0050  0036                      MAP(50)		EQU I_MOV_D_B
+   210  0051  0037                      MAP(51)		EQU I_MOV_D_C
+   211  0052  0038                      MAP(52)		EQU I_MOV_D_D
+   212  0053  0039                      MAP(53)		EQU I_MOV_D_E
+   213  0054  003a                      MAP(54)		EQU I_MOV_D_H
+   214  0055  003b                      MAP(55)		EQU I_MOV_D_L
+   215  0056  003c                      MAP(56)		EQU I_MOV_D_M
+   216  0057  003d                      MAP(57)		EQU I_MOV_D_A
+   217  
+   218  0036  c0 00 01 00 00 00 00 00   I_MOV_D_B:	{EBCHD,LDEH}		JMP BUSCA
+              00 10 80 00 00 00 00 00
+   219  
+   220  0037  c0 00 01 00 00 00 00 00   I_MOV_D_C:	{EBCLD,LDEH}		JMP BUSCA
+              00 11 00 00 00 00 00 00
+   221  
+   222  0038  c0 00 01 00 00 00 00 00   I_MOV_D_D:	{}			JMP BUSCA
+              00 00 00 00 00 00 00 00
+   223  
+   224  0039  c0 00 01 00 00 00 00 00   I_MOV_D_E:	{EDELD,LDEH}		JMP BUSCA
+              00 90 00 00 00 00 00 00
+   225  
+   226  003a  c0 00 01 00 00 00 00 00   I_MOV_D_H:	{EHLHD,LDEH}		JMP BUSCA
+              20 10 00 00 00 00 00 00
+   227  
+   228  003b  c0 00 01 00 00 00 00 00   I_MOV_D_L:	{EHLLD,LDEH}		JMP BUSCA
+              40 10 00 00 00 00 00 00
+   229  
+   230  003c  c0 00 01 00 07 00 00 00   I_MOV_D_M:	{EHLA,ESA,EED,MR,LDEH}	JMP BUSCA
+              80 10 00 00 00 00 00 00
+   231  
+   232  003d  c0 00 01 00 00 00 00 00   I_MOV_D_A:	{EAD,LDEH}		JMP BUSCA
+              00 10 00 00 00 04 00 00
+   233  
+   234  0058  003e                      MAP(58)		EQU I_MOV_E_B
+   235  0059  003f                      MAP(59)		EQU I_MOV_E_C
+   236  005a  0040                      MAP(5A)		EQU I_MOV_E_D
+   237  005b  0041                      MAP(5B)		EQU I_MOV_E_E
+   238  005c  0042                      MAP(5C)		EQU I_MOV_E_H
+   239  005d  0043                      MAP(5D)		EQU I_MOV_E_L
+   240  005e  0044                      MAP(5E)		EQU I_MOV_E_M
+   241  005f  0045                      MAP(5F)		EQU I_MOV_E_A
+   242  
+   243  003e  c0 00 01 00 00 00 00 00   I_MOV_E_B:	{EBCHD,LDEL}		JMP BUSCA
+              00 20 80 00 00 00 00 00
+   244  
+   245  003f  c0 00 01 00 00 00 00 00   I_MOV_E_C:	{EBCLD,LDEL}		JMP BUSCA
+              00 21 00 00 00 00 00 00
+   246  
+   247  0040  c0 00 01 00 00 00 00 00   I_MOV_E_D:	{EDEHD,LDEL}		JMP BUSCA
+              00 60 00 00 00 00 00 00
+   248  
+   249  0041  c0 00 01 00 00 00 00 00   I_MOV_E_E:	{}			JMP BUSCA
+              00 00 00 00 00 00 00 00
+   250  
+   251  0042  c0 00 01 00 00 00 00 00   I_MOV_E_H:	{EHLHD,LDEL}		JMP BUSCA
+              20 20 00 00 00 00 00 00
+   252  
+   253  0043  c0 00 01 00 00 00 00 00   I_MOV_E_L:	{EHLLD,LDEL}		JMP BUSCA
+              40 20 00 00 00 00 00 00
+   254  
+   255  0044  c0 00 01 00 07 00 00 00   I_MOV_E_M:	{EHLA,ESA,EED,MR,LDEL}	JMP BUSCA
+              80 20 00 00 00 00 00 00
+   256  
+   257  0045  c0 00 01 00 00 00 00 00   I_MOV_E_A:	{EAD,LDEL}		JMP BUSCA
+              00 20 00 00 00 04 00 00
+   258  
+   259  0060  0046                      MAP(60)		EQU I_MOV_H_B
+   260  0061  0047                      MAP(61)		EQU I_MOV_H_C
+   261  0062  0048                      MAP(62)		EQU I_MOV_H_D
+   262  0063  0049                      MAP(63)		EQU I_MOV_H_E
+   263  0064  004a                      MAP(64)		EQU I_MOV_H_H
+   264  0065  004b                      MAP(65)		EQU I_MOV_H_L
+   265  0066  004c                      MAP(66)		EQU I_MOV_H_M
+   266  0067  004d                      MAP(67)		EQU I_MOV_H_A
+   267  
+   268  0046  c0 00 01 00 00 00 00 00   I_MOV_H_B:	{EBCHD,LHLH}		JMP BUSCA
+              08 00 80 00 00 00 00 00
+   269  
+   270  0047  c0 00 01 00 00 00 00 00   I_MOV_H_C:	{EBCLD,LHLH}		JMP BUSCA
+              08 01 00 00 00 00 00 00
+   271  
+   272  0048  c0 00 01 00 00 00 00 00   I_MOV_H_D:	{EDEHD,LHLH}		JMP BUSCA
+              08 40 00 00 00 00 00 00
+   273  
+   274  0049  c0 00 01 00 00 00 00 00   I_MOV_H_E:	{EDELD,LHLH}		JMP BUSCA
+              08 80 00 00 00 00 00 00
+   275  
+   276  004a  c0 00 01 00 00 00 00 00   I_MOV_H_H:	{}			JMP BUSCA
+              00 00 00 00 00 00 00 00
+   277  
+   278  004b  c0 00 01 00 00 00 00 00   I_MOV_H_L:	{EHLLD,LHLH}		JMP BUSCA
+              48 00 00 00 00 00 00 00
+   279  
+   280  004c  c0 00 01 00 07 00 00 00   I_MOV_H_M:	{EHLA,ESA,EED,MR,LHLH}	JMP BUSCA
+              88 00 00 00 00 00 00 00
+   281  
+   282  004d  c0 00 01 00 00 00 00 00   I_MOV_H_A:	{EAD,LHLH}		JMP BUSCA
+              08 00 00 00 00 04 00 00
+   283  
+   284  0068  004e                      MAP(68)		EQU I_MOV_L_B
+   285  0069  004f                      MAP(69)		EQU I_MOV_L_C
+   286  006a  0050                      MAP(6A)		EQU I_MOV_L_D
+   287  006b  0051                      MAP(6B)		EQU I_MOV_L_E
+   288  006c  0052                      MAP(6C)		EQU I_MOV_L_H
+   289  006d  0053                      MAP(6D)		EQU I_MOV_L_L
+   290  006e  0054                      MAP(6E)		EQU I_MOV_L_M
+   291  006f  0055                      MAP(6F)		EQU I_MOV_L_A
+   292  
+   293  004e  c0 00 01 00 00 00 00 00   I_MOV_L_B:	{EBCHD,LHLL}		JMP BUSCA
+              10 00 80 00 00 00 00 00
+   294  
+   295  004f  c0 00 01 00 00 00 00 00   I_MOV_L_C:	{EBCLD,LHLL}		JMP BUSCA
+              10 01 00 00 00 00 00 00
+   296  
+   297  0050  c0 00 01 00 00 00 00 00   I_MOV_L_D:	{EDEHD,LHLL}		JMP BUSCA
+              10 40 00 00 00 00 00 00
+   298  
+   299  0051  c0 00 01 00 00 00 00 00   I_MOV_L_E:	{EDELD,LHLL}		JMP BUSCA
+              10 80 00 00 00 00 00 00
+   300  
+   301  0052  c0 00 01 00 00 00 00 00   I_MOV_L_H:	{EHLHD,LHLL}		JMP BUSCA
+              30 00 00 00 00 00 00 00
+   302  
+   303  0053  c0 00 01 00 00 00 00 00   I_MOV_L_L:	{}			JMP BUSCA
+              00 00 00 00 00 00 00 00
+   304  
+   305  0054  c0 00 01 00 07 00 00 00   I_MOV_L_M:	{EHLA,ESA,EED,MR,LHLL}	JMP BUSCA
+              90 00 00 00 00 00 00 00
+   306  
+   307  0055  c0 00 01 00 00 00 00 00   I_MOV_L_A:	{EAD,LHLL}		JMP BUSCA
+              10 00 00 00 00 04 00 00
+   308  
+   309  0070  0056                      MAP(70)		EQU I_MOV_M_B
+   310  0071  0057                      MAP(71)		EQU I_MOV_M_C
+   311  0072  0058                      MAP(72)		EQU I_MOV_M_D
+   312  0073  0059                      MAP(73)		EQU I_MOV_M_E
+   313  0074  005a                      MAP(74)		EQU I_MOV_M_H
+   314  0075  005b                      MAP(75)		EQU I_MOV_M_L
+   315  0077  005c                      MAP(77)		EQU I_MOV_M_A
+   316  
+   317  0056  c0 00 01 00 0a 80 00 00   I_MOV_M_B:	{EBCHD,EHLA,ESA,ESD,MW}	JMP BUSCA
+              80 00 80 00 00 00 00 00
+   318  
+   319  0057  c0 00 01 00 0a 80 00 00   I_MOV_M_C:	{EBCLD,EHLA,ESA,ESD,MW}	JMP BUSCA
+              80 01 00 00 00 00 00 00
+   320  
+   321  0058  c0 00 01 00 0a 80 00 00   I_MOV_M_D:	{EDEHD,EHLA,ESA,ESD,MW}	JMP BUSCA
+              80 40 00 00 00 00 00 00
+   322  
+   323  0059  c0 00 01 00 0a 80 00 00   I_MOV_M_E:	{EDELD,EHLA,ESA,ESD,MW}	JMP BUSCA
+              80 80 00 00 00 00 00 00
+   324  
+   325  005a  c0 00 01 00 0a 80 00 00   I_MOV_M_H:	{EHLHD,EHLA,ESA,ESD,MW}	JMP BUSCA
+              a0 00 00 00 00 00 00 00
+   326  
+   327  005b  c0 00 01 00 0a 80 00 00   I_MOV_M_L:	{EHLLD,EHLA,ESA,ESD,MW}	JMP BUSCA
+              c0 00 00 00 00 00 00 00
+   328  
+   329  005c  c0 00 01 00 0a 80 00 00   I_MOV_M_A:	{EAD,EHLA,ESA,ESD,MW}	JMP BUSCA
+              80 00 00 00 00 04 00 00
+   330  
+   331  0078  005d                      MAP(78)		EQU I_MOV_A_B
+   332  0079  005e                      MAP(79)		EQU I_MOV_A_C
+   333  007a  005f                      MAP(7A)		EQU I_MOV_A_D
+   334  007b  0060                      MAP(7B)		EQU I_MOV_A_E
+   335  007c  0061                      MAP(7C)		EQU I_MOV_A_H
+   336  007d  0062                      MAP(7D)		EQU I_MOV_A_L
+   337  007e  0063                      MAP(7E)		EQU I_MOV_A_M
+   338  007f  0064                      MAP(7F)		EQU I_MOV_A_A
+   339  
+   340  005d  c0 00 01 00 00 00 00 00   I_MOV_A_B:	{EBCHD,LA}		JMP BUSCA
+              00 00 80 00 00 10 00 00
+   341  
+   342  005e  c0 00 01 00 00 00 00 00   I_MOV_A_C:	{EBCLD,LA}		JMP BUSCA
+              00 01 00 00 00 10 00 00
+   343  
+   344  005f  c0 00 01 00 00 00 00 00   I_MOV_A_D:	{EDEHD,LA}		JMP BUSCA
+              00 40 00 00 00 10 00 00
+   345  
+   346  0060  c0 00 01 00 00 00 00 00   I_MOV_A_E:	{EDELD,LA}		JMP BUSCA
+              00 80 00 00 00 10 00 00
+   347  
+   348  0061  c0 00 01 00 00 00 00 00   I_MOV_A_H:	{EHLHD,LA}		JMP BUSCA
+              20 00 00 00 00 10 00 00
+   349  
+   350  0062  c0 00 01 00 00 00 00 00   I_MOV_A_L:	{EHLLD,LA}		JMP BUSCA
+              40 00 00 00 00 10 00 00
+   351  
+   352  0063  c0 00 01 00 07 00 00 00   I_MOV_A_M:	{EHLA,ESA,EED,MR,LA}	JMP BUSCA
+              80 00 00 00 00 10 00 00
+   353  
+   354  0064  c0 00 01 00 00 00 00 00   I_MOV_A_A:	{}			JMP BUSCA
+              00 00 00 00 00 00 00 00
+   355  
+   356  
+   357                                  //********************************************
+   358                                  //  InstruCoes para carregar e armazenar bytes
+   359                                  //********************************************
+   360  000a  0065                      MAP(0A)		EQU I_LDAX_B
+   361  001a  0066                      MAP(1A)		EQU I_LDAX_D
+   362  002a  0067                      MAP(2A)		EQU I_LHLD_A16
+   363  003a  006d                      MAP(3A)		EQU I_LDA_A16
+   364  0002  0071                      MAP(02)		EQU I_STAX_B
+   365  0012  0072                      MAP(12)		EQU I_STAX_D
+   366  0022  0073                      MAP(22)		EQU I_SHLD_A16
+   367  0032  0079                      MAP(32)		EQU I_STA_A16
+   368  
+   369  0065  c0 00 01 00 07 00 00 00   I_LDAX_B:	{EBCA,ESA,EED,MR,LA}		JMP BUSCA
+              00 02 00 00 00 10 00 00
+   370  
+   371  0066  c0 00 01 00 07 00 00 00   I_LDAX_D:	{EDEA,ESA,EED,MR,LA}		JMP BUSCA
+              01 00 00 00 00 10 00 00
+   372  
+   373  0067  00 00 00 00 07 00 00 08   I_LHLD_A16:	{EPCA,ESA,EED,MR,LXL}
+              00 00 04 00 00 00 00 00
+   374  0068  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   375  0069  00 00 00 00 07 00 00 04   		{EPCA,ESA,EED,MR,LXH}
+              00 00 04 00 00 00 00 00
+   376  006a  00 00 00 00 07 00 00 40   		{EXA,ESA,EED,MR,LHLL,INCPC}
+              10 00 00 20 00 00 00 00
+   377  006b  00 00 00 00 00 00 00 01   		{INCX}
+              00 00 00 00 00 00 00 00
+   378  006c  c0 00 01 00 07 00 00 40   		{EXA,ESA,EED,MR,LHLH}		JMP BUSCA
+              08 00 00 00 00 00 00 00
+   379  
+   380  006d  00 00 00 00 07 00 00 08   I_LDA_A16:	{EPCA,ESA,EED,MR,LXL}
+              00 00 04 00 00 00 00 00
+   381  006e  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   382  006f  00 00 00 00 07 00 00 04   		{EPCA,ESA,EED,MR,LXH}
+              00 00 04 00 00 00 00 00
+   383  0070  c0 00 01 00 07 00 00 40   		{EXA,ESA,EED,MR,LA,INCPC}	JMP BUSCA
+              00 00 00 20 00 10 00 00
+   384  
+   385  0071  c0 00 01 00 0a 80 00 00   I_STAX_B:	{EBCA,ESA,ESD,EAD,MW}		JMP BUSCA
+              00 02 00 00 00 04 00 00
+   386  
+   387  0072  c0 00 01 00 0a 80 00 00   I_STAX_D:	{EDEA,ESA,ESD,EAD,MW}		JMP BUSCA
+              01 00 00 00 00 04 00 00
+   388  
+   389  0073  00 00 00 00 07 00 00 08   I_SHLD_A16:	{EPCA,ESA,EED,MR,LXL}
+              00 00 04 00 00 00 00 00
+   390  0074  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   391  0075  00 00 00 00 07 00 00 04   		{EPCA,ESA,EED,MR,LXH}
+              00 00 04 00 00 00 00 00
+   392  0076  00 00 00 00 0a 80 00 40   		{EXA,ESA,ESD,EHLLD,MW,INCPC}
+              40 00 00 20 00 00 00 00
+   393  0077  00 00 00 00 00 00 00 01   		{INCX}
+              00 00 00 00 00 00 00 00
+   394  0078  c0 00 01 00 0a 80 00 40   		{EXA,ESA,ESD,EHLHD,MW}		JMP BUSCA
+              20 00 00 00 00 00 00 00
+   395  
+   396  0079  00 00 00 00 07 00 00 08   I_STA_A16:	{EPCA,ESA,EED,MR,LXL}
+              00 00 04 00 00 00 00 00
+   397  007a  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   398  007b  00 00 00 00 07 00 00 04   		{EPCA,ESA,EED,MR,LXH}
+              00 00 04 00 00 00 00 00
+   399  007c  c0 00 01 00 0a 80 00 40   		{EXA,ESA,ESD,EAD,MW,INCPC}	JMP BUSCA
+              00 00 00 20 00 04 00 00
+   400  
+   401                                  //**********************************************************************
+   402                                  //  Instrucoes de carregamento de par de registradores com dado imediato
+   403                                  //**********************************************************************
+   404  0001  007d                      MAP(01)		EQU I_LXI_B_D16
+   405  0011  0081                      MAP(11)		EQU I_LXI_D_D16
+   406  0021  0085                      MAP(21)		EQU I_LXI_H_D16
+   407  0031  0089                      MAP(31)		EQU I_LXI_SP_D16
+   408  
+   409  007d                            I_LXI_B_D16:
+   410  007d  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LBCL}
+              00 00 44 00 00 00 00 00
+   411  007e  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   412  007f  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LBCH}
+              00 00 24 00 00 00 00 00
+   413  0080  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   414  
+   415  0081                            I_LXI_D_D16:
+   416  0081  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LDEL}
+              00 20 04 00 00 00 00 00
+   417  0082  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   418  0083  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LDEH}
+              00 10 04 00 00 00 00 00
+   419  0084  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   420  
+   421  0085                            I_LXI_H_D16:
+   422  0085  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LHLL}
+              10 00 04 00 00 00 00 00
+   423  0086  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   424  0087  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LHLH}
+              08 00 04 00 00 00 00 00
+   425  0088  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   426  
+   427  0089                            I_LXI_SP_D16:
+   428  0089  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LSPL}
+              00 00 04 02 00 00 00 00
+   429  008a  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   430  008b  00 00 00 00 07 00 00 00   		{EPCA,ESA,EED,MR,LSPH}
+              00 00 04 01 00 00 00 00
+   431  008c  c0 00 01 00 00 00 00 00   		{INCPC}				JMP BUSCA
+              00 00 00 20 00 00 00 00
+   432  
+   433                                  //***********************
+   434                                  //  Instrucoes DOUBLE ADD
+   435                                  //***********************
+   436  0009  008d                      MAP(09)		EQU I_DAD_B
+   437  0019  0093                      MAP(19)		EQU I_DAD_D
+   438  0029  0099                      MAP(29)		EQU I_DAD_H
+   439  0039  009d                      MAP(39)		EQU I_DAD_SP
+   440  
+   441  008d  00 00 00 00 00 00 00 00   I_DAD_B:	{EHLLD,LT1}
+              40 00 00 00 00 80 00 00
+   442  008e  00 00 00 00 00 00 00 00   		{EBCLD,LT2}
+              00 01 00 00 04 00 00 00
+   443  008f  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LHLL,LCARRY}
+              10 00 00 00 02 40 08 01
+   444  0090  00 00 00 00 00 00 00 00   		{EHLHD,LT1}
+              20 00 00 00 00 80 00 00
+   445  0091  00 00 00 00 00 00 00 00   		{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   446  0092  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP0,EULA,LHLH,LCARRY}	JMP BUSCA
+              08 00 00 00 02 40 08 03
+   447  
+   448  
+   449  0093  00 00 00 00 00 00 00 00   I_DAD_D:	{EHLLD,LT1}
+              40 00 00 00 00 80 00 00
+   450  0094  00 00 00 00 00 00 00 00   		{EDELD,LT2}
+              00 80 00 00 04 00 00 00
+   451  0095  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LHLL,LCARRY}
+              10 00 00 00 02 40 08 01
+   452  0096  00 00 00 00 00 00 00 00   		{EHLHD,LT1}
+              20 00 00 00 00 80 00 00
+   453  0097  00 00 00 00 00 00 00 00   		{EDEHD,LT2}
+              00 40 00 00 04 00 00 00
+   454  0098  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP0,EULA,LHLH,LCARRY}	JMP BUSCA
+              08 00 00 00 02 40 08 03
+   455  
+   456  0099  00 00 00 00 00 00 00 00   I_DAD_H:	{EHLLD,LT1,LT2}
+              40 00 00 00 04 80 00 00
+   457  009a  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LHLL,LCARRY}
+              10 00 00 00 02 40 08 01
+   458  009b  00 00 00 00 00 00 00 00   		{EHLHD,LT1,LT2}
+              20 00 00 00 04 80 00 00
+   459  009c  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP0,EULA,LHLH,LCARRY}	JMP BUSCA
+              08 00 00 00 02 40 08 03
+   460  
+   461  009d  00 00 00 00 00 00 00 00   I_DAD_SP:	{EHLLD,LT1}
+              40 00 00 00 00 80 00 00
+   462  009e  00 00 00 00 00 00 00 00   		{ESPLD,LT2}
+              00 00 00 08 04 00 00 00
+   463  009f  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LHLL,LCARRY}
+              10 00 00 00 02 40 08 01
+   464  00a0  00 00 00 00 00 00 00 00   		{EHLHD,LT1}
+              20 00 00 00 00 80 00 00
+   465  00a1  00 00 00 00 00 00 00 00   		{ESPHD,LT2}
+              00 00 00 04 04 00 00 00
+   466  00a2  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP0,EULA,LHLH,LCARRY}	JMP BUSCA
+              08 00 00 00 02 40 08 03
+   467  
+   468                                  //*****************************
+   469                                  //  Instrucoes de incrementacao
+   470                                  //*****************************
+   471  0004  00a3                      MAP(04)		EQU I_INR_B
+   472  000c  00a6                      MAP(0C)		EQU I_INR_C
+   473  0014  00a9                      MAP(14)		EQU I_INR_D
+   474  001c  00ac                      MAP(1C)		EQU I_INR_E
+   475  0024  00af                      MAP(24)		EQU I_INR_H
+   476  002c  00b2                      MAP(2C)		EQU I_INR_L
+   477  0034  00b5                      MAP(34)		EQU I_INR_M
+   478  003c  00b8                      MAP(3C)		EQU I_INR_A
+   479  0003  00ba                      MAP(03)		EQU I_INX_B
+   480  0013  00bb                      MAP(13)		EQU I_INX_D
+   481  0023  00bc                      MAP(23)		EQU I_INX_H
+   482  0033  00bd                      MAP(33)		EQU I_INX_SP
+   483  
+   484  00a3  00 00 00 00 00 00 00 00   I_INR_B:	{EBCHD,LT1}
+              00 00 80 00 00 80 00 00
+   485  00a4  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   486  00a5  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LBCH,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 20 00 02 40 f0 01
+   487  
+   488  00a6  00 00 00 00 00 00 00 00   I_INR_C:	{EBCLD,LT1}
+              00 01 00 00 00 80 00 00
+   489  00a7  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   490  00a8  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LBCL,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 40 00 02 40 f0 01
+   491  
+   492  00a9  00 00 00 00 00 00 00 00   I_INR_D:	{EDEHD,LT1}
+              00 40 00 00 00 80 00 00
+   493  00aa  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   494  00ab  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LDEH,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 10 00 00 02 40 f0 01
+   495  
+   496  00ac  00 00 00 00 00 00 00 00   I_INR_E:	{EDELD,LT1}
+              00 80 00 00 00 80 00 00
+   497  00ad  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   498  00ae  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LDEL,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 20 00 00 02 40 f0 01
+   499  
+   500  00af  00 00 00 00 00 00 00 00   I_INR_H:	{EHLHD,LT1}
+              20 00 00 00 00 80 00 00
+   501  00b0  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   502  00b1  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LHLH,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              08 00 00 00 02 40 f0 01
+   503  
+   504  00b2  00 00 00 00 00 00 00 00   I_INR_L:	{EHLLD,LT1}
+              40 00 00 00 00 80 00 00
+   505  00b3  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   506  00b4  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LHLL,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              10 00 00 00 02 40 f0 01
+   507  
+   508  00b5  00 00 00 00 07 00 00 00   I_INR_M:	{EHLA,ESA,EED,MR,LT1}
+              80 00 00 00 00 80 00 00
+   509  00b6  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   510  00b7  c0 00 01 00 0a 80 00 00   		{ET1ULA,ET2ULA,EULA,EHLA,ESA,LPARITY,LACARRY,LZERO,LSIGNAL,ESD,MW}	JMP BUSCA
+              80 00 00 00 02 40 f0 01
+   511  
+   512  00b8  00 00 00 00 00 00 00 00   I_INR_A:	{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   513  00b9  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,EULA,LA,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 00 00 02 18 f0 01
+   514  
+   515  00ba  c0 00 01 00 00 00 00 00   I_INX_B:	{INCBC}	JMP BUSCA
+              00 00 08 00 00 00 00 00
+   516  
+   517  00bb  c0 00 01 00 00 00 00 00   I_INX_D:	{INCDE}	JMP BUSCA
+              00 04 00 00 00 00 00 00
+   518  
+   519  00bc  c0 00 01 00 00 00 00 00   I_INX_H:	{INCHL}	JMP BUSCA
+              02 00 00 00 00 00 00 00
+   520  
+   521  00bd  c0 00 01 00 00 00 00 00   I_INX_SP:	{INCSP}	JMP BUSCA
+              00 00 00 00 40 00 00 00
+   522  
+   523  
+   524                                  //*****************************
+   525                                  //  Instrucoes de decrementacao
+   526                                  //*****************************
+   527  0005  00be                      MAP(05)		EQU I_DCR_B
+   528  000d  00c1                      MAP(0D)		EQU I_DCR_C
+   529  0015  00c4                      MAP(15)		EQU I_DCR_D
+   530  001d  00c7                      MAP(1D)		EQU I_DCR_E
+   531  0025  00ca                      MAP(25)		EQU I_DCR_H
+   532  002d  00cd                      MAP(2D)		EQU I_DCR_L
+   533  0035  00d0                      MAP(35)		EQU I_DCR_M
+   534  003d  00d3                      MAP(3D)		EQU I_DCR_A
+   535  000b  00d5                      MAP(0B)		EQU I_DCX_B
+   536  001b  00d6                      MAP(1B)		EQU I_DCX_D
+   537  002b  00d7                      MAP(2B)		EQU I_DCX_H
+   538  003b  00d8                      MAP(3B)		EQU I_DCX_SP
+   539  
+   540  00be  00 00 00 00 00 00 00 00   I_DCR_B:	{EBCHD,LT1}
+              00 00 80 00 00 80 00 00
+   541  00bf  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   542  00c0  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP1,EULA,LBCH,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 20 00 02 40 f0 05
+   543  
+   544  00c1  00 00 00 00 00 00 00 00   I_DCR_C:	{EBCLD,LT1}
+              00 01 00 00 00 80 00 00
+   545  00c2  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   546  00c3  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP1,EULA,LBCL,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 40 00 02 40 f0 05
+   547  
+   548  00c4  00 00 00 00 00 00 00 00   I_DCR_D:	{EDEHD,LT1}
+              00 40 00 00 00 80 00 00
+   549  00c5  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   550  00c6  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP1,EULA,LDEH,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 10 00 00 02 40 f0 05
+   551  
+   552  00c7  00 00 00 00 00 00 00 00   I_DCR_E:	{EDELD,LT1}
+              00 80 00 00 00 80 00 00
+   553  00c8  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   554  00c9  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP1,EULA,LDEL,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 20 00 00 02 40 f0 05
+   555  
+   556  00ca  00 00 00 00 00 00 00 00   I_DCR_H:	{EHLHD,LT1}
+              20 00 00 00 00 80 00 00
+   557  00cb  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   558  00cc  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP1,EULA,LHLH,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              08 00 00 00 02 40 f0 05
+   559  
+   560  00cd  00 00 00 00 00 00 00 00   I_DCR_L:	{EHLLD,LT1}
+              40 00 00 00 00 80 00 00
+   561  00ce  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   562  00cf  c0 00 01 00 00 00 00 00   		{ET1ULA,ET2ULA,OP1,EULA,LHLL,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              10 00 00 00 02 40 f0 05
+   563  
+   564  00d0  00 00 00 00 07 00 00 00   I_DCR_M:	{EHLA,ESA,EED,MR,LT1}
+              80 00 00 00 00 80 00 00
+   565  00d1  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   566  00d2  c0 00 01 00 0a 80 00 00   		{ET1ULA,ET2ULA,OP1,EULA,EHLA,ESA,LPARITY,LACARRY,LZERO,LSIGNAL,ESD,MW}	JMP BUSCA
+              80 00 00 00 02 40 f0 05
+   567  
+   568  00d3  00 00 00 00 00 00 00 00   I_DCR_A:	{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+   569  00d4  c0 00 01 00 00 00 00 00   		{EAULA,ET2ULA,OP1,EULA,LA,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 00 00 02 18 f0 05
+   570  
+   571  00d5  c0 00 01 00 00 00 00 00   I_DCX_B:	{DECBC}	JMP BUSCA
+              00 00 10 00 00 00 00 00
+   572  
+   573  00d6  c0 00 01 00 00 00 00 00   I_DCX_D:	{DECDE}	JMP BUSCA
+              00 08 00 00 00 00 00 00
+   574  
+   575  00d7  c0 00 01 00 00 00 00 00   I_DCX_H:	{DECHL}	JMP BUSCA
+              04 00 00 00 00 00 00 00
+   576  
+   577  00d8  c0 00 01 00 00 00 00 00   I_DCX_SP:	{DECSP}	JMP BUSCA
+              00 00 00 00 80 00 00 00
+   578  
+   579  
+   580                                  //************************************
+   581                                  //  Instrucoes de operacao com a pilha
+   582                                  //************************************
+   583  00c5  00d9                      MAP(0C5)	EQU I_PUSH_B
+   584  00d5  00dd                      MAP(0D5)	EQU I_PUSH_D
+   585  00e5  00e1                      MAP(0E5)	EQU I_PUSH_H
+   586  00f5  00e5                      MAP(0F5)	EQU I_PUSH_PSW
+   587  00c1  00e9                      MAP(0C1)	EQU I_POP_B
+   588  00d1  00ed                      MAP(0D1)	EQU I_POP_D
+   589  00e1  00f1                      MAP(0E1)	EQU I_POP_H
+   590  00f1  00f5                      MAP(0F1)	EQU I_POP_PSW
+   591  00e3  00f9                      MAP(0E3)	EQU I_XTHL
+   592  00f9  0101                      MAP(0F9)	EQU I_SPHL
+   593  
+   594  00d9  00 00 00 00 00 00 00 00   I_PUSH_B:	{DECSP}
+              00 00 00 00 80 00 00 00
+   595  00da  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EBCHD,ESD,MW}
+              00 00 80 10 00 00 00 00
+   596  00db  00 00 00 00 00 00 00 00   		{DECSP}
+              00 00 00 00 80 00 00 00
+   597  00dc  c0 00 01 00 0a 80 00 00   		{ESPA,ESA,EBCLD,ESD,MW}		JMP BUSCA
+              00 01 00 10 00 00 00 00
+   598  
+   599  00dd  00 00 00 00 00 00 00 00   I_PUSH_D:	{DECSP}
+              00 00 00 00 80 00 00 00
+   600  00de  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EDEHD,ESD,MW}
+              00 40 00 10 00 00 00 00
+   601  00df  00 00 00 00 00 00 00 00   		{DECSP}
+              00 00 00 00 80 00 00 00
+   602  00e0  c0 00 01 00 0a 80 00 00   		{ESPA,ESA,EDELD,ESD,MW}		JMP BUSCA
+              00 80 00 10 00 00 00 00
+   603  
+   604  00e1  00 00 00 00 00 00 00 00   I_PUSH_H:	{DECSP}
+              00 00 00 00 80 00 00 00
+   605  00e2  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EHLHD,ESD,MW}
+              20 00 00 10 00 00 00 00
+   606  00e3  00 00 00 00 00 00 00 00   		{DECSP}
+              00 00 00 00 80 00 00 00
+   607  00e4  c0 00 01 00 0a 80 00 00   		{ESPA,ESA,EHLLD,ESD,MW}		JMP BUSCA
+              40 00 00 10 00 00 00 00
+   608  
+   609  00e5  00 00 00 00 00 00 00 00   I_PUSH_PSW:	{DECSP}
+              00 00 00 00 80 00 00 00
+   610  00e6  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EAD,ESD,MW}
+              00 00 00 10 00 04 00 00
+   611  00e7  00 00 00 00 00 00 00 00   		{DECSP}
+              00 00 00 00 80 00 00 00
+   612  00e8  c0 00 01 00 0a 80 00 00   		{ESPA,ESA,EFLAGS,ESD,MW}	JMP BUSCA
+              00 00 00 10 00 02 00 00
+   613  
+   614  00e9  00 00 00 00 07 00 00 00   I_POP_B:	{ESPA,ESA,EED,MR,LBCL}
+              00 00 40 10 00 00 00 00
+   615  00ea  00 00 00 00 00 00 00 00   		{INCSP}
+              00 00 00 00 40 00 00 00
+   616  00eb  00 00 00 00 07 00 00 00   		{ESPA,ESA,EED,MR,LBCH}
+              00 00 20 10 00 00 00 00
+   617  00ec  c0 00 01 00 00 00 00 00   		{INCSP}				JMP BUSCA
+              00 00 00 00 40 00 00 00
+   618  
+   619  00ed  00 00 00 00 07 00 00 00   I_POP_D:	{ESPA,ESA,EED,MR,LDEL}
+              00 20 00 10 00 00 00 00
+   620  00ee  00 00 00 00 00 00 00 00   		{INCSP}
+              00 00 00 00 40 00 00 00
+   621  00ef  00 00 00 00 07 00 00 00   		{ESPA,ESA,EED,MR,LDEH}
+              00 10 00 10 00 00 00 00
+   622  00f0  c0 00 01 00 00 00 00 00   		{INCSP}				JMP BUSCA
+              00 00 00 00 40 00 00 00
+   623  
+   624  00f1  00 00 00 00 07 00 00 00   I_POP_H:	{ESPA,ESA,EED,MR,LHLL}
+              10 00 00 10 00 00 00 00
+   625  00f2  00 00 00 00 00 00 00 00   		{INCSP}
+              00 00 00 00 40 00 00 00
+   626  00f3  00 00 00 00 07 00 00 00   		{ESPA,ESA,EED,MR,LHLH}
+              08 00 00 10 00 00 00 00
+   627  00f4  c0 00 01 00 00 00 00 00   		{INCSP}				JMP BUSCA
+              00 00 00 00 40 00 00 00
+   628  
+   629  00f5  00 00 00 00 07 00 00 00   I_POP_PSW:	{ESPA,ESA,EED,MR,LFLAGS}
+              00 00 00 10 00 01 00 00
+   630  00f6  00 00 00 00 00 00 00 00   		{INCSP}
+              00 00 00 00 40 00 00 00
+   631  00f7  00 00 00 00 07 00 00 00   		{ESPA,ESA,EED,MR,LA}
+              00 00 00 10 00 10 00 00
+   632  00f8  c0 00 01 00 00 00 00 00   		{INCSP}				JMP BUSCA
+              00 00 00 00 40 00 00 00
+   633  
+   634  00f9  00 00 00 00 00 00 00 00   I_XTHL:		{EHLLD,LT1}
+              40 00 00 00 00 80 00 00
+   635  00fa  00 00 00 00 07 00 00 00   		{ESPA,ESA,EED,MR,LHLL}
+              10 00 00 10 00 00 00 00
+   636  00fb  00 00 00 00 0a 80 00 00   		{ESPA,ESA,ESD,ET1D,MW}
+              00 00 00 10 00 20 00 00
+   637  00fc  00 00 00 00 00 00 00 00   		{INCSP}
+              00 00 00 00 40 00 00 00
+   638  00fd  00 00 00 00 00 00 00 00   		{EHLHD,LT1}
+              20 00 00 00 00 80 00 00
+   639  00fe  00 00 00 00 07 00 00 00   		{ESPA,ESA,EED,MR,LHLH}
+              08 00 00 10 00 00 00 00
+   640  00ff  00 00 00 00 0a 80 00 00   		{ESPA,ESA,ESD,ET1D,MW}
+              00 00 00 10 00 20 00 00
+   641  0100  c0 00 01 00 00 00 00 00   		{DECSP}				JMP BUSCA
+              00 00 00 00 80 00 00 00
+   642  
+   643  0101  00 00 00 00 00 00 00 00   I_SPHL:		{EHLHD,LSPH}
+              20 00 00 01 00 00 00 00
+   644  0102  c0 00 01 00 00 00 00 00   		{EHLLD,LSPL}			JMP BUSCA
+              40 00 00 02 00 00 00 00
+   645  
+   646                                  //**********************
+   647                                  //  Instrucoes especiais
+   648                                  //**********************
+   649  00eb  0103                      MAP(0EB)	EQU I_XCHG
+   650  0027  0109                      MAP(27)		EQU I_DAA
+   651  002f  0111                      MAP(2F)		EQU I_CMA
+   652  0037  0112                      MAP(37)		EQU I_STC
+   653  003f  0113                      MAP(3F)		EQU I_CMC
+   654  
+   655  0103  00 00 00 00 00 00 00 00   I_XCHG:		{EHLHD,LT1}
+              20 00 00 00 00 80 00 00
+   656  0104  00 00 00 00 00 00 00 00   		{EDEHD,LHLH}
+              08 40 00 00 00 00 00 00
+   657  0105  00 00 00 00 00 00 00 00   		{ET1D,LDEH}
+              00 10 00 00 00 20 00 00
+   658  0106  00 00 00 00 00 00 00 00   		{EHLLD,LT1}
+              40 00 00 00 00 80 00 00
+   659  0107  00 00 00 00 00 00 00 00   		{EDELD,LHLL}
+              10 80 00 00 00 00 00 00
+   660  0108  c0 00 01 00 00 00 00 00   		{ET1D,LDEL}			JMP BUSCA
+              00 20 00 00 00 20 00 00
+   661  
+   662  0109  d9 01 0c 00 00 00 00 00   I_DAA:		{EFLAGS,LT1}			JSR_NLS9 DAA_L
+              00 00 00 00 00 82 00 00
+   663  010a  dd 01 10 00 00 00 00 00   		{EK,SK1,SK0,LT2}		JSR_NHS9 DAA_H
+              00 00 00 00 04 00 00 e0
+   664  010b  c0 00 01 00 00 00 00 00   		{}				JMP BUSCA
+              00 00 00 00 00 00 00 00
+   665  
+   666  010c  00 00 00 00 00 00 00 00   DAA_L:		{EK,SK1,LT2}
+              00 00 00 00 04 00 00 a0
+   667  010d  00 00 00 00 00 00 00 00   		{EAULA,ET2ULA,EULA,LA,LCARRY,LACARRY,LPARITY,LZERO,LSIGNAL}
+              00 00 00 00 02 18 f8 01
+   668  010e  00 00 00 00 00 00 00 00   		{EFLAGS,LT2}
+              00 00 00 00 04 02 00 00
+   669  010f  42 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,OP2,OP1,LFLAGS}	RET
+              00 00 00 00 02 41 00 0c
+   670  
+   671  0110  42 00 00 00 00 00 00 00   DAA_H:		{EAULA,ET2ULA,EULA,LA,SETCARRY,LPARITY,LZERO,LSIGNAL}	RET
+              00 00 00 00 02 18 d2 01
+   672  
+   673  
+   674  0111  c0 00 01 00 00 00 00 00   I_CMA:		{EAULA,OP2,EULA,LA}		JMP BUSCA
+              00 00 00 00 00 18 00 09
+   675  
+   676  0112  c0 00 01 00 00 00 00 00   I_STC:		{SETCARRY}			JMP BUSCA
+              00 00 00 00 00 00 02 00
+   677  
+   678  0113  c0 00 01 00 00 00 00 00   I_CMC:		{CMC}				JMP BUSCA
+              00 00 00 00 00 00 04 00
+   679  
+   680                                  //*******************************
+   681                                  //  Instrucoes de entrada e saida
+   682                                  //*******************************
+   683  00d3  0114                      MAP(0D3)	EQU I_OUT_A8
+   684  00db  0116                      MAP(0DB)	EQU I_IN_A8
+   685  
+   686  0114  00 00 00 00 07 00 00 0c   I_OUT_A8:	{EPCA,ESA,EED,MR,LXH,LXL}
+              00 00 04 00 00 00 00 00
+   687  0115  c0 00 01 00 22 80 00 40   		{EXA,ESA,ESD,EAD,IOW,INCPC}	JMP BUSCA
+              00 00 00 20 00 04 00 00
+   688  
+   689  0116  00 00 00 00 07 00 00 0c   I_IN_A8:	{EPCA,ESA,EED,MR,LXH,LXL}
+              00 00 04 00 00 00 00 00
+   690  0117  c0 00 01 00 13 00 00 40   		{EXA,ESA,EED,IOR,LA,INCPC}	JMP BUSCA
+              00 00 00 20 00 10 00 00
+   691  
+   692  
+   693                                  //******************************************
+   694                                  //  Instrucoes de operacoes com o Acumulador
+   695                                  //******************************************
+   696  
+   697                                  //**************
+   698                                  //  Operacao ADD
+   699                                  //**************
+   700  0080  0118                      MAP(80)		EQU I_ADD_B
+   701  0081  011a                      MAP(81)		EQU I_ADD_C
+   702  0082  011b                      MAP(82)		EQU I_ADD_D
+   703  0083  011c                      MAP(83)		EQU I_ADD_E
+   704  0084  011d                      MAP(84)		EQU I_ADD_H
+   705  0085  011e                      MAP(85)		EQU I_ADD_L
+   706  0086  011f                      MAP(86)		EQU I_ADD_M
+   707  0087  0120                      MAP(87)		EQU I_ADD_A
+   708  
+   709  0118  00 00 00 00 00 00 00 00   I_ADD_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   710  0119  c0 00 01 00 00 00 00 00   ADD:		{EAULA,ET2ULA,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA}	JMP BUSCA
+              00 00 00 00 02 18 f8 01
+   711  
+   712  011a  c0 01 19 00 00 00 00 00   I_ADD_C:	{EBCLD,LT2}		JMP ADD
+              00 01 00 00 04 00 00 00
+   713  
+   714  011b  c0 01 19 00 00 00 00 00   I_ADD_D:	{EDEHD,LT2}		JMP ADD
+              00 40 00 00 04 00 00 00
+   715  
+   716  011c  c0 01 19 00 00 00 00 00   I_ADD_E:	{EDELD,LT2}		JMP ADD
+              00 80 00 00 04 00 00 00
+   717  
+   718  011d  c0 01 19 00 00 00 00 00   I_ADD_H:	{EHLHD,LT2}		JMP ADD
+              20 00 00 00 04 00 00 00
+   719  
+   720  011e  c0 01 19 00 00 00 00 00   I_ADD_L:	{EHLLD,LT2}		JMP ADD
+              40 00 00 00 04 00 00 00
+   721  
+   722  011f  c0 01 19 00 07 00 00 00   I_ADD_M:	{EHLA,ESA,EED,MR,LT2}	JMP ADD
+              80 00 00 00 04 00 00 00
+   723  
+   724  0120  c0 01 19 00 00 00 00 00   I_ADD_A:	{EAD,LT2}		JMP ADD
+              00 00 00 00 04 04 00 00
+   725  
+   726                                  //**************
+   727                                  //  Operacao ADC
+   728                                  //**************
+   729  0088  0121                      MAP(88)		EQU I_ADC_B
+   730  0089  0123                      MAP(89)		EQU I_ADC_C
+   731  008a  0124                      MAP(8A)		EQU I_ADC_D
+   732  008b  0125                      MAP(8B)		EQU I_ADC_E
+   733  008c  0126                      MAP(8C)		EQU I_ADC_H
+   734  008d  0127                      MAP(8D)		EQU I_ADC_L
+   735  008e  0128                      MAP(8E)		EQU I_ADC_M
+   736  008f  0129                      MAP(8F)		EQU I_ADC_A
+   737  
+   738  0121  00 00 00 00 00 00 00 00   I_ADC_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   739  0122  c0 00 01 00 00 00 00 00   ADC:		{EAULA,ET2ULA,OP0,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA}		JMP BUSCA
+              00 00 00 00 02 18 f8 03
+   740  
+   741  0123  c0 01 22 00 00 00 00 00   I_ADC_C:	{EBCLD,LT2}		JMP ADC
+              00 01 00 00 04 00 00 00
+   742  
+   743  0124  c0 01 22 00 00 00 00 00   I_ADC_D:	{EDEHD,LT2}		JMP ADC
+              00 40 00 00 04 00 00 00
+   744  
+   745  0125  c0 01 22 00 00 00 00 00   I_ADC_E:	{EDELD,LT2}		JMP ADC
+              00 80 00 00 04 00 00 00
+   746  
+   747  0126  c0 01 22 00 00 00 00 00   I_ADC_H:	{EHLHD,LT2}		JMP ADC
+              20 00 00 00 04 00 00 00
+   748  
+   749  0127  c0 01 22 00 00 00 00 00   I_ADC_L:	{EHLLD,LT2}		JMP ADC
+              40 00 00 00 04 00 00 00
+   750  
+   751  0128  c0 01 22 00 07 00 00 00   I_ADC_M:	{EHLA,ESA,EED,MR,LT2}	JMP ADC
+              80 00 00 00 04 00 00 00
+   752  
+   753  0129  c0 01 22 00 00 00 00 00   I_ADC_A:	{EAD,LT2}		JMP ADC
+              00 00 00 00 04 04 00 00
+   754  
+   755                                  //**************
+   756                                  //  Operacao SUB
+   757                                  //**************
+   758  0090  012a                      MAP(90)		EQU I_SUB_B
+   759  0091  012c                      MAP(91)		EQU I_SUB_C
+   760  0092  012d                      MAP(92)		EQU I_SUB_D
+   761  0093  012e                      MAP(93)		EQU I_SUB_E
+   762  0094  012f                      MAP(94)		EQU I_SUB_H
+   763  0095  0130                      MAP(95)		EQU I_SUB_L
+   764  0096  0131                      MAP(96)		EQU I_SUB_M
+   765  0097  0132                      MAP(97)		EQU I_SUB_A
+   766  
+   767  012a  00 00 00 00 00 00 00 00   I_SUB_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   768  012b  c0 00 01 00 00 00 00 00   SUB:		{EAULA,ET2ULA,OP1,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA}	JMP BUSCA
+              00 00 00 00 02 18 f8 05
+   769  
+   770  012c  c0 01 2b 00 00 00 00 00   I_SUB_C:	{EBCLD,LT2}		JMP SUB
+              00 01 00 00 04 00 00 00
+   771  
+   772  012d  c0 01 2b 00 00 00 00 00   I_SUB_D:	{EDEHD,LT2}		JMP SUB
+              00 40 00 00 04 00 00 00
+   773  
+   774  012e  c0 01 2b 00 00 00 00 00   I_SUB_E:	{EDELD,LT2}		JMP SUB
+              00 80 00 00 04 00 00 00
+   775  
+   776  012f  c0 01 2b 00 00 00 00 00   I_SUB_H:	{EHLHD,LT2}		JMP SUB
+              20 00 00 00 04 00 00 00
+   777  
+   778  0130  c0 01 2b 00 00 00 00 00   I_SUB_L:	{EHLLD,LT2}		JMP SUB
+              40 00 00 00 04 00 00 00
+   779  
+   780  0131  c0 01 2b 00 07 00 00 00   I_SUB_M:	{EHLA,ESA,EED,MR,LT2}	JMP SUB
+              80 00 00 00 04 00 00 00
+   781  
+   782  0132  c0 01 2b 00 00 00 00 00   I_SUB_A:	{EAD,LT2}		JMP SUB
+              00 00 00 00 04 04 00 00
+   783  
+   784                                  //**************
+   785                                  //  Operacao SBB
+   786                                  //**************
+   787  0098  0133                      MAP(98)		EQU I_SBB_B
+   788  0099  0135                      MAP(99)		EQU I_SBB_C
+   789  009a  0136                      MAP(9A)		EQU I_SBB_D
+   790  009b  0137                      MAP(9B)		EQU I_SBB_E
+   791  009c  0138                      MAP(9C)		EQU I_SBB_H
+   792  009d  0139                      MAP(9D)		EQU I_SBB_L
+   793  009e  013a                      MAP(9E)		EQU I_SBB_M
+   794  009f  013b                      MAP(9F)		EQU I_SBB_A
+   795  
+   796  0133  00 00 00 00 00 00 00 00   I_SBB_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   797  0134  c0 00 01 00 00 00 00 00   SBB:		{EAULA,ET2ULA,OP1,OP0,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL,LA}	JMP BUSCA
+              00 00 00 00 02 18 f8 07
+   798  
+   799  0135  c0 01 34 00 00 00 00 00   I_SBB_C:	{EBCLD,LT2}		JMP SBB
+              00 01 00 00 04 00 00 00
+   800  
+   801  0136  c0 01 34 00 00 00 00 00   I_SBB_D:	{EDEHD,LT2}		JMP SBB
+              00 40 00 00 04 00 00 00
+   802  
+   803  0137  c0 01 34 00 00 00 00 00   I_SBB_E:	{EDELD,LT2}		JMP SBB
+              00 80 00 00 04 00 00 00
+   804  
+   805  0138  c0 01 34 00 00 00 00 00   I_SBB_H:	{EHLHD,LT2}		JMP SBB
+              20 00 00 00 04 00 00 00
+   806  
+   807  0139  c0 01 34 00 00 00 00 00   I_SBB_L:	{EHLLD,LT2}		JMP SBB
+              40 00 00 00 04 00 00 00
+   808  
+   809  013a  c0 01 34 00 07 00 00 00   I_SBB_M:	{EHLA,ESA,EED,MR,LT2}	JMP SBB
+              80 00 00 00 04 00 00 00
+   810  
+   811  013b  c0 01 34 00 00 00 00 00   I_SBB_A:	{EAD,LT2}		JMP SBB
+              00 00 00 00 04 04 00 00
+   812  
+   813                                  //**************
+   814                                  //  Operacao AND
+   815                                  //**************
+   816  00a0  013c                      MAP(0A0)	EQU I_ANA_B
+   817  00a1  013e                      MAP(0A1)	EQU I_ANA_C
+   818  00a2  013f                      MAP(0A2)	EQU I_ANA_D
+   819  00a3  0140                      MAP(0A3)	EQU I_ANA_E
+   820  00a4  0141                      MAP(0A4)	EQU I_ANA_H
+   821  00a5  0142                      MAP(0A5)	EQU I_ANA_L
+   822  00a6  0143                      MAP(0A6)	EQU I_ANA_M
+   823  00a7  0144                      MAP(0A7)	EQU I_ANA_A
+   824  
+   825  013c  00 00 00 00 00 00 00 00   I_ANA_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   826  013d  c0 00 01 00 00 00 00 00   ANA:		{EAULA,ET2ULA,OP2,OP0,EULA,LA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 00 00 02 18 f8 0b
+   827  
+   828  013e  c0 01 3d 00 00 00 00 00   I_ANA_C:	{EBCLD,LT2}		JMP ANA
+              00 01 00 00 04 00 00 00
+   829  
+   830  013f  c0 01 3d 00 00 00 00 00   I_ANA_D:	{EDEHD,LT2}		JMP ANA
+              00 40 00 00 04 00 00 00
+   831  
+   832  0140  c0 01 3d 00 00 00 00 00   I_ANA_E:	{EDELD,LT2}		JMP ANA
+              00 80 00 00 04 00 00 00
+   833  
+   834  0141  c0 01 3d 00 00 00 00 00   I_ANA_H:	{EHLHD,LT2}		JMP ANA
+              20 00 00 00 04 00 00 00
+   835  
+   836  0142  c0 01 3d 00 00 00 00 00   I_ANA_L:	{EHLLD,LT2}		JMP ANA
+              40 00 00 00 04 00 00 00
+   837  
+   838  0143  c0 01 3d 00 07 00 00 00   I_ANA_M:	{EHLA,ESA,EED,MR,LT2}	JMP ANA
+              80 00 00 00 04 00 00 00
+   839  
+   840  0144  c0 01 3d 00 00 00 00 00   I_ANA_A:	{EAD,LT2}		JMP ANA
+              00 00 00 00 04 04 00 00
+   841  
+   842                                  //**************
+   843                                  //  Operacao XOR
+   844                                  //**************
+   845  00a8  0145                      MAP(0A8)	EQU I_XRA_B
+   846  00a9  0147                      MAP(0A9)	EQU I_XRA_C
+   847  00aa  0148                      MAP(0AA)	EQU I_XRA_D
+   848  00ab  0149                      MAP(0AB)	EQU I_XRA_E
+   849  00ac  014a                      MAP(0AC)	EQU I_XRA_H
+   850  00ad  014b                      MAP(0AD)	EQU I_XRA_L
+   851  00ae  014c                      MAP(0AE)	EQU I_XRA_M
+   852  00af  014d                      MAP(0AF)	EQU I_XRA_A
+   853  
+   854  0145  00 00 00 00 00 00 00 00   I_XRA_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   855  0146  c0 00 01 00 00 00 00 00   XRA:		{EAULA,ET2ULA,OP2,OP1,OP0,EULA,LA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 00 00 02 18 f8 0f
+   856  
+   857  0147  c0 01 46 00 00 00 00 00   I_XRA_C:	{EBCLD,LT2}		JMP XRA
+              00 01 00 00 04 00 00 00
+   858  
+   859  0148  c0 01 46 00 00 00 00 00   I_XRA_D:	{EDEHD,LT2}		JMP XRA
+              00 40 00 00 04 00 00 00
+   860  
+   861  0149  c0 01 46 00 00 00 00 00   I_XRA_E:	{EDELD,LT2}		JMP XRA
+              00 80 00 00 04 00 00 00
+   862  
+   863  014a  c0 01 46 00 00 00 00 00   I_XRA_H:	{EHLHD,LT2}		JMP XRA
+              20 00 00 00 04 00 00 00
+   864  
+   865  014b  c0 01 46 00 00 00 00 00   I_XRA_L:	{EHLLD,LT2}		JMP XRA
+              40 00 00 00 04 00 00 00
+   866  
+   867  014c  c0 01 46 00 07 00 00 00   I_XRA_M:	{EHLA,ESA,EED,MR,LT2}	JMP XRA
+              80 00 00 00 04 00 00 00
+   868  
+   869  014d  c0 01 46 00 00 00 00 00   I_XRA_A:	{EAD,LT2}		JMP XRA
+              00 00 00 00 04 04 00 00
+   870  
+   871                                  //*************
+   872                                  //  Operacao OR
+   873                                  //*************
+   874  00b0  014e                      MAP(0B0)	EQU I_ORA_B
+   875  00b1  0150                      MAP(0B1)	EQU I_ORA_C
+   876  00b2  0151                      MAP(0B2)	EQU I_ORA_D
+   877  00b3  0152                      MAP(0B3)	EQU I_ORA_E
+   878  00b4  0153                      MAP(0B4)	EQU I_ORA_H
+   879  00b5  0154                      MAP(0B5)	EQU I_ORA_L
+   880  00b6  0155                      MAP(0B6)	EQU I_ORA_M
+   881  00b7  0156                      MAP(0B7)	EQU I_ORA_A
+   882  
+   883  014e  00 00 00 00 00 00 00 00   I_ORA_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   884  014f  c0 00 01 00 00 00 00 00   ORA:		{EAULA,ET2ULA,OP2,OP1,EULA,LA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 00 00 02 18 f8 0d
+   885  
+   886  0150  c0 01 4f 00 00 00 00 00   I_ORA_C:	{EBCLD,LT2}		JMP ORA
+              00 01 00 00 04 00 00 00
+   887  
+   888  0151  c0 01 4f 00 00 00 00 00   I_ORA_D:	{EDEHD,LT2}		JMP ORA
+              00 40 00 00 04 00 00 00
+   889  
+   890  0152  c0 01 4f 00 00 00 00 00   I_ORA_E:	{EDELD,LT2}		JMP ORA
+              00 80 00 00 04 00 00 00
+   891  
+   892  0153  c0 01 4f 00 00 00 00 00   I_ORA_H:	{EHLHD,LT2}		JMP ORA
+              20 00 00 00 04 00 00 00
+   893  
+   894  0154  c0 01 4f 00 00 00 00 00   I_ORA_L:	{EHLLD,LT2}		JMP ORA
+              40 00 00 00 04 00 00 00
+   895  
+   896  0155  c0 01 4f 00 07 00 00 00   I_ORA_M:	{EHLA,ESA,EED,MR,LT2}	JMP ORA
+              80 00 00 00 04 00 00 00
+   897  
+   898  0156  c0 01 4f 00 00 00 00 00   I_ORA_A:	{EAD,LT2}		JMP ORA
+              00 00 00 00 04 04 00 00
+   899  
+   900                                  //**************
+   901                                  //  Operacao CMP
+   902                                  //**************
+   903  00b8  0157                      MAP(0B8)	EQU I_CMP_B
+   904  00b9  0159                      MAP(0B9)	EQU I_CMP_C
+   905  00ba  015a                      MAP(0BA)	EQU I_CMP_D
+   906  00bb  015b                      MAP(0BB)	EQU I_CMP_E
+   907  00bc  015c                      MAP(0BC)	EQU I_CMP_H
+   908  00bd  015d                      MAP(0BD)	EQU I_CMP_L
+   909  00be  015e                      MAP(0BE)	EQU I_CMP_M
+   910  00bf  015f                      MAP(0BF)	EQU I_CMP_A
+   911  
+   912  0157  00 00 00 00 00 00 00 00   I_CMP_B:	{EBCHD,LT2}
+              00 00 80 00 04 00 00 00
+   913  0158  c0 00 01 00 00 00 00 00   CMP:		{EAULA,ET2ULA,OP1,EULA,LCARRY,LPARITY,LACARRY,LZERO,LSIGNAL}	JMP BUSCA
+              00 00 00 00 02 08 f8 05
+   914  
+   915  0159  c0 01 58 00 00 00 00 00   I_CMP_C:	{EBCLD,LT2}		JMP CMP
+              00 01 00 00 04 00 00 00
+   916  
+   917  015a  c0 01 58 00 00 00 00 00   I_CMP_D:	{EDEHD,LT2}		JMP CMP
+              00 40 00 00 04 00 00 00
+   918  
+   919  015b  c0 01 58 00 00 00 00 00   I_CMP_E:	{EDELD,LT2}		JMP CMP
+              00 80 00 00 04 00 00 00
+   920  
+   921  015c  c0 01 58 00 00 00 00 00   I_CMP_H:	{EHLHD,LT2}		JMP CMP
+              20 00 00 00 04 00 00 00
+   922  
+   923  015d  c0 01 58 00 00 00 00 00   I_CMP_L:	{EHLLD,LT2}		JMP CMP
+              40 00 00 00 04 00 00 00
+   924  
+   925  015e  c0 01 58 00 07 00 00 00   I_CMP_M:	{EHLA,ESA,EED,MR,LT2}	JMP CMP
+              80 00 00 00 04 00 00 00
+   926  
+   927  015f  c0 01 58 00 00 00 00 00   I_CMP_A:	{EAD,LT2}		JMP CMP
+              00 00 00 00 04 04 00 00
+   928  
+   929                                  //*********************
+   930                                  //  Instrucoes de salto
+   931                                  //*********************
+   932  00c3  0160                      MAP(0C3)	EQU I_JMP_A16
+   933  00c2  0165                      MAP(0C2)	EQU I_JNZ_A16
+   934  00ca  0169                      MAP(0CA)	EQU I_JZ_A16
+   935  00d2  016c                      MAP(0D2)	EQU I_JNC_A16
+   936  00da  016e                      MAP(0DA)	EQU I_JC_A16
+   937  00e2  0171                      MAP(0E2)	EQU I_JPO_A16
+   938  00ea  0173                      MAP(0EA)	EQU I_JPE_A16
+   939  00f2  0176                      MAP(0F2)	EQU I_JP_A16
+   940  00fa  0178                      MAP(0FA)	EQU I_JM_A16
+   941  00e9  017b                      MAP(0E9)	EQU I_PCHL
+   942  
+   943  0160  00 00 00 00 07 00 00 08   I_JMP_A16:	{EPCA,ESA,EED,MR,LXL}
+              00 00 04 00 00 00 00 00
+   944  0161  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   945  0162  00 00 00 00 07 00 00 04   		{EPCA,ESA,EED,MR,LXH}
+              00 00 04 00 00 00 00 00
+   946  0163  00 00 00 00 00 00 00 20   		{EXLD,LPCL}
+              00 00 00 80 00 00 00 00
+   947  0164  c0 00 01 00 00 00 00 10   		{EXHD,LPCH}	JMP BUSCA
+              00 00 00 40 00 00 00 00
+   948  
+   949  0165  d0 01 67 00 00 00 00 00   I_JNZ_A16:	{}		JMP_ZERO NO_JMP
+              00 00 00 00 00 00 00 00
+   950  0166  c0 01 60 00 00 00 00 00   		{}		JMP I_JMP_A16
+              00 00 00 00 00 00 00 00
+   951  0167  00 00 00 00 00 00 00 00   NO_JMP:		{INCPC}
+              00 00 00 20 00 00 00 00
+   952  0168  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+   953  
+   954  0169  d0 01 60 00 00 00 00 00   I_JZ_A16:	{}		JMP_ZERO I_JMP_A16
+              00 00 00 00 00 00 00 00
+   955  016a  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   956  016b  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+   957  
+   958  016c  c4 01 67 00 00 00 00 00   I_JNC_A16:	{}		JMP_CARRY NO_JMP
+              00 00 00 00 00 00 00 00
+   959  016d  c0 01 60 00 00 00 00 00   		{}		JMP I_JMP_A16
+              00 00 00 00 00 00 00 00
+   960  
+   961  016e  c4 01 60 00 00 00 00 00   I_JC_A16:	{}		JMP_CARRY I_JMP_A16
+              00 00 00 00 00 00 00 00
+   962  016f  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   963  0170  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+   964  
+   965  0171  c8 01 67 00 00 00 00 00   I_JPO_A16:	{}		JMP_PARITY NO_JMP
+              00 00 00 00 00 00 00 00
+   966  0172  c0 01 60 00 00 00 00 00   		{}		JMP I_JMP_A16
+              00 00 00 00 00 00 00 00
+   967  
+   968  0173  c8 01 60 00 00 00 00 00   I_JPE_A16:	{}		JMP_PARITY I_JMP_A16
+              00 00 00 00 00 00 00 00
+   969  0174  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   970  0175  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+   971  
+   972  0176  d4 01 67 00 00 00 00 00   I_JP_A16:	{}		JMP_SIGNAL NO_JMP
+              00 00 00 00 00 00 00 00
+   973  0177  c0 01 60 00 00 00 00 00   		{}		JMP I_JMP_A16
+              00 00 00 00 00 00 00 00
+   974  
+   975  0178  d4 01 60 00 00 00 00 00   I_JM_A16:	{}		JMP_SIGNAL I_JMP_A16
+              00 00 00 00 00 00 00 00
+   976  0179  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   977  017a  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+   978  
+   979  017b  00 00 00 00 00 00 00 00   I_PCHL:		{EHLHD,LPCH}
+              20 00 00 40 00 00 00 00
+   980  017c  c0 00 01 00 00 00 00 00   		{EHLLD,LPCL}	JMP BUSCA
+              40 00 00 80 00 00 00 00
+   981  
+   982                                  //************************************
+   983                                  //  Instrucoes de chamada de subrotina
+   984                                  //************************************
+   985  00cd  017d                      MAP(0CD)	EQU I_CALL_A16
+   986  00c4  0187                      MAP(0C4)	EQU I_CNZ_A16
+   987  00cc  0189                      MAP(0CC)	EQU I_CZ_A16
+   988  00d4  018c                      MAP(0D4)	EQU I_CNC_A16
+   989  00dc  018e                      MAP(0DC)	EQU I_CC_A16
+   990  00e4  0191                      MAP(0E4)	EQU I_CPO_A16
+   991  00ec  0193                      MAP(0EC)	EQU I_CPE_A16
+   992  00f4  0196                      MAP(0F4)	EQU I_CP_A16
+   993  00fc  0198                      MAP(0FC)	EQU I_CM_A16
+   994  
+   995  017d  00 00 00 00 00 00 00 04   I_CALL_A16:	{DECSP,EPCHD,LXH}
+              00 00 01 00 80 00 00 00
+   996  017e  00 00 00 00 00 00 00 08   		{EPCLD,LXL}
+              00 00 02 00 00 00 00 00
+   997  017f  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   998  0180  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+   999  0181  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EPCHD,ESD,MW}
+              00 00 01 10 00 00 00 00
+  1000  0182  00 00 00 00 00 00 00 00   		{DECSP}
+              00 00 00 00 80 00 00 00
+  1001  0183  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EPCLD,ESD,MW}
+              00 00 02 10 00 00 00 00
+  1002  0184  00 00 00 00 07 00 00 40   		{EXA,ESA,EED,MR,LPCL}
+              00 00 00 80 00 00 00 00
+  1003  0185  00 00 00 00 00 00 00 01   		{INCX}
+              00 00 00 00 00 00 00 00
+  1004  0186  c0 00 01 00 07 00 00 40   		{EXA,ESA,EED,MR,LPCH}	JMP BUSCA
+              00 00 00 40 00 00 00 00
+  1005  
+  1006  0187  d0 01 8a 00 00 00 00 00   I_CNZ_A16:	{}		JMP_ZERO NO_CALL
+              00 00 00 00 00 00 00 00
+  1007  0188  c0 01 7d 00 00 00 00 00   		{}		JMP I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1008  
+  1009  0189  d0 01 7d 00 00 00 00 00   I_CZ_A16:	{}		JMP_ZERO I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1010  018a  00 00 00 00 00 00 00 00   NO_CALL:	{INCPC}
+              00 00 00 20 00 00 00 00
+  1011  018b  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+  1012  
+  1013  018c  c4 01 8a 00 00 00 00 00   I_CNC_A16:	{}		JMP_CARRY NO_CALL
+              00 00 00 00 00 00 00 00
+  1014  018d  c0 01 7d 00 00 00 00 00   		{}		JMP I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1015  
+  1016  018e  c4 01 7d 00 00 00 00 00   I_CC_A16:	{}		JMP_CARRY I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1017  018f  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+  1018  0190  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+  1019  
+  1020  0191  c8 01 8a 00 00 00 00 00   I_CPO_A16:	{}		JMP_PARITY NO_CALL
+              00 00 00 00 00 00 00 00
+  1021  0192  c0 01 7d 00 00 00 00 00   		{}		JMP I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1022  
+  1023  0193  c8 01 7d 00 00 00 00 00   I_CPE_A16:	{}		JMP_PARITY I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1024  0194  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+  1025  0195  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+  1026  
+  1027  0196  d4 01 8a 00 00 00 00 00   I_CP_A16:	{}		JMP_SIGNAL NO_CALL
+              00 00 00 00 00 00 00 00
+  1028  0197  c0 01 7d 00 00 00 00 00   		{}		JMP I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1029  
+  1030  0198  d4 01 7d 00 00 00 00 00   I_CM_A16:	{}		JMP_SIGNAL I_CALL_A16
+              00 00 00 00 00 00 00 00
+  1031  0199  00 00 00 00 00 00 00 00   		{INCPC}
+              00 00 00 20 00 00 00 00
+  1032  019a  c0 00 01 00 00 00 00 00   		{INCPC}		JMP BUSCA
+              00 00 00 20 00 00 00 00
+  1033  
+  1034                                  //************************************
+  1035                                  //  Instrucoes de retorno de subrotina
+  1036                                  //************************************
+  1037  00c9  019b                      MAP(0C9)	EQU I_RET
+  1038  00c0  019f                      MAP(0C0)	EQU I_RNZ
+  1039  00c8  01a1                      MAP(0C8)	EQU I_RZ
+  1040  00d0  01a3                      MAP(0D0)	EQU I_RNC
+  1041  00d8  01a5                      MAP(0D8)	EQU I_RC
+  1042  00e0  01a7                      MAP(0E0)	EQU I_RPO
+  1043  00e8  01a9                      MAP(0E8)	EQU I_RPE
+  1044  00f0  01ab                      MAP(0F0)	EQU I_RP
+  1045  00f8  01ad                      MAP(0F8)	EQU I_RM
+  1046  
+  1047  019b  00 00 00 00 07 00 00 00   I_RET:		{ESPA,ESA,EED,MR,LPCL}
+              00 00 00 90 00 00 00 00
+  1048  019c  00 00 00 00 00 00 00 00   		{INCSP}
+              00 00 00 00 40 00 00 00
+  1049  019d  00 00 00 00 07 00 00 00   		{ESPA,ESA,EED,MR,LPCH}
+              00 00 00 50 00 00 00 00
+  1050  019e  c0 00 01 00 00 00 00 00   		{INCSP}	JMP BUSCA
+              00 00 00 00 40 00 00 00
+  1051  
+  1052  019f  d0 00 01 00 00 00 00 00   I_RNZ:		{}		JMP_ZERO BUSCA
+              00 00 00 00 00 00 00 00
+  1053  01a0  c0 01 9b 00 00 00 00 00   		{}		JMP I_RET
+              00 00 00 00 00 00 00 00
+  1054  
+  1055  01a1  d0 01 9b 00 00 00 00 00   I_RZ:		{}		JMP_ZERO I_RET
+              00 00 00 00 00 00 00 00
+  1056  01a2  c0 00 01 00 00 00 00 00   		{}		JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1057  
+  1058  01a3  c4 00 01 00 00 00 00 00   I_RNC:		{}		JMP_CARRY BUSCA
+              00 00 00 00 00 00 00 00
+  1059  01a4  c0 01 9b 00 00 00 00 00   		{}		JMP I_RET
+              00 00 00 00 00 00 00 00
+  1060  
+  1061  01a5  c4 01 9b 00 00 00 00 00   I_RC:		{}		JMP_CARRY I_RET
+              00 00 00 00 00 00 00 00
+  1062  01a6  c0 00 01 00 00 00 00 00   		{}		JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1063  
+  1064  01a7  c8 00 01 00 00 00 00 00   I_RPO:		{}		JMP_PARITY BUSCA
+              00 00 00 00 00 00 00 00
+  1065  01a8  c0 01 9b 00 00 00 00 00   		{}		JMP I_RET
+              00 00 00 00 00 00 00 00
+  1066  
+  1067  01a9  c8 01 9b 00 00 00 00 00   I_RPE:		{}		JMP_PARITY I_RET
+              00 00 00 00 00 00 00 00
+  1068  01aa  c0 00 01 00 00 00 00 00   		{}		JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1069  
+  1070  01ab  d4 00 01 00 00 00 00 00   I_RP:		{}		JMP_SIGNAL BUSCA
+              00 00 00 00 00 00 00 00
+  1071  01ac  c0 01 9b 00 00 00 00 00   		{}		JMP I_RET
+              00 00 00 00 00 00 00 00
+  1072  
+  1073  01ad  d4 01 9b 00 00 00 00 00   I_RM:		{}		JMP_SIGNAL I_RET
+              00 00 00 00 00 00 00 00
+  1074  01ae  c0 00 01 00 00 00 00 00   		{}		JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1075  
+  1076                                  //********************
+  1077                                  //  Instrucoes RESTART
+  1078                                  //********************
+  1079  00c7  01af                      MAP(0C7)	EQU I_RST_0
+  1080  00cf  01af                      MAP(0CF)	EQU I_RST_1
+  1081  00d7  01af                      MAP(0D7)	EQU I_RST_2
+  1082  00df  01af                      MAP(0DF)	EQU I_RST_3
+  1083  00e7  01af                      MAP(0E7)	EQU I_RST_4
+  1084  00ef  01af                      MAP(0EF)	EQU I_RST_5
+  1085  00f7  01af                      MAP(0F7)	EQU I_RST_6
+  1086  00ff  01af                      MAP(0FF)	EQU I_RST_7
+  1087  
+  1088  01af                            I_RST_0:
+  1089  01af                            I_RST_1:
+  1090  01af                            I_RST_2:
+  1091  01af                            I_RST_3:
+  1092  01af                            I_RST_4:
+  1093  01af                            I_RST_5:
+  1094  01af                            I_RST_6:
+  1095  01af                            I_RST_7:
+  1096  01af  00 00 00 00 00 00 00 00   		{DECSP}
+              00 00 00 00 80 00 00 00
+  1097  01b0  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EPCHD,ESD,MW}
+              00 00 01 10 00 00 00 00
+  1098  01b1  00 00 00 00 00 00 00 00   		{DECSP}
+              00 00 00 00 80 00 00 00
+  1099  01b2  00 00 00 00 0a 80 00 00   		{ESPA,ESA,EPCLD,ESD,MW}
+              00 00 02 10 00 00 00 00
+  1100  01b3  00 00 00 00 00 00 00 00   		{EK,SK1,LT1}
+              00 00 00 00 00 80 00 a0
+  1101  01b4  00 00 00 00 00 00 00 00   		{EK,SK0,LT2}
+              00 00 00 00 04 00 00 60
+  1102  01b5  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LT1,LT2}
+              00 00 00 00 06 c0 00 01
+  1103  01b6  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LT1,LT2}
+              00 00 00 00 06 c0 00 01
+  1104  01b7  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LT1,LT2}
+              00 00 00 00 06 c0 00 01
+  1105  01b8  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,EULA,LT1,LT2}
+              00 00 00 00 06 c0 00 01
+  1106  01b9  00 00 00 00 00 40 00 00   		{EID,LT2}
+              00 00 00 00 04 00 00 00
+  1107  01ba  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,OP2,OP0,EULA,LPCL}
+              00 00 00 80 02 40 00 0b
+  1108  01bb  c0 00 01 00 00 00 00 00   		{EK,LPCH}	JMP BUSCA
+              00 00 00 40 00 00 00 20
+  1109  
+  1110                                  //*******************
+  1111                                  //  Instrucoes ROTATE
+  1112                                  //*******************
+  1113  0007  01bc                      MAP(07)		EQU I_RLC
+  1114  000f  01bd                      MAP(0F)		EQU I_RRC
+  1115  0017  01be                      MAP(17)		EQU I_RAL
+  1116  001f  01bf                      MAP(1F)		EQU I_RAR
+  1117  
+  1118  01bc  c0 00 01 00 00 00 00 00   I_RLC:		{EAULA,OP3,EULA,LCARRY,LA}		JMP BUSCA
+              00 00 00 00 00 18 08 11
+  1119  
+  1120  01bd  c0 00 01 00 00 00 00 00   I_RRC:		{EAULA,OP3,OP2,EULA,LCARRY,LA}		JMP BUSCA
+              00 00 00 00 00 18 08 19
+  1121  
+  1122  01be  c0 00 01 00 00 00 00 00   I_RAL:		{EAULA,OP3,OP0,EULA,LCARRY,LA}		JMP BUSCA
+              00 00 00 00 00 18 08 13
+  1123  
+  1124  01bf  c0 00 01 00 00 00 00 00   I_RAR:		{EAULA,OP3,OP2,OP0,EULA,LCARRY,LA}	JMP BUSCA
+              00 00 00 00 00 18 08 1b
+  1125  
+  1126                                  //************************
+  1127                                  //  Instrucoes de controle
+  1128                                  //************************
+  1129  0000  01c0                      MAP(00)		EQU I_NOP
+  1130  0076  01c1                      MAP(76)		EQU I_HLT
+  1131  00f3  01c2                      MAP(0F3)	EQU I_DI
+  1132  00fb  01c3                      MAP(0FB)	EQU I_EI
+  1133  
+  1134  01c0  c0 00 01 00 00 00 00 00   I_NOP:		{}	JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1135  01c1  c0 01 c1 00 00 00 00 00   I_HLT:		{}	JMP I_HLT
+              00 00 00 00 00 00 00 00
+  1136  01c2  c0 00 01 00 00 00 00 00   I_DI:		{}	JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1137  01c3  c0 00 01 00 00 00 00 00   I_EI:		{}	JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1138  
+  1139                                  //                                        *
+  1140                                  //*****************************************
+  1141  
+  1142  
+  1143                                  //*******************************************************
+  1144                                  //*******************************************************
+  1145                                  //** Lab Instrucoes "Instruções complexas"             **
+  1146                                  //**                                                   **
+  1147                                  //**   Aqui sao introduzidas instrucoes instrucoes     **
+  1148                                  //**   que manipulam blocos de bytes, as quais nao     **  
+  1149                                  //**   fazem parte do conjunto de instrucões do 8080:  **
+  1150                                  //**                                                   **
+  1151                                  //**   FILLBLOCK 08H                                   **
+  1152                                  //**   MOVBLOCK  10H                                   **
+  1153                                  //**   LONGADD   18H                                   **
+  1154                                  //**   LONGSUB   20H                                   **
+  1155                                  //**   JMP256    0CBH                                  **
+  1156                                  //**                                                   **
+  1157                                  //*******************************************************
+  1158                                  //*******************************************************
+  1159  
+  1160                                  //************************************************************
+  1161                                  // FILLBLOCK	; [08].
+  1162                                  // Preencher BC posicoes da memoria, a partir do endereco HL
+  1163                                  // com a constante A.
+  1164                                  // Nao deixa efeitos colaterais em PSW, BC, DE e HL.
+  1165  
+  1166  0008  01c4                      MAP(08)	EQU I_FILLBLOCK
+  1167  
+  1168                                  // Implementacao: A=constante, X conta bytes, Y=destino:
+  1169  
+  1170                                  // Carrega BC em X e pula para final se X==0
+  1171  01c4  00 00 00 00 00 00 00 04   I_FILLBLOCK:	{EBCHD,LXH}			// XH<--BCH {upperbyte para dados,carrega upperbyte}
+              00 00 80 00 00 00 00 00
+  1172  01c5  00 00 00 00 00 00 00 08   		{EBCLD,LXL}			// XL<--BCL {lowerbyte para dados,carrega lowerbyte}
+              00 01 00 00 00 00 00 00
+  1173  01c6  f4 01 cd 00 00 00 00 00   		{} JMP_XZERO FIM_FILLBLOCK	// Pula para fim se X==0
+              00 00 00 00 00 00 00 00
+  1174  
+  1175                                  // Carrega HL em Y
+  1176  01c7  00 00 00 00 00 00 02 00   		{EHLHD,LYH}			// YH<--HLL {upperbyte para dados,carrega upperbyte}
+              20 00 00 00 00 00 00 00
+  1177  01c8  00 00 00 00 00 00 04 00   		{EHLLD,LYL}			// YL<--HLL {lowerbyte para dados,carrega lowerbyte}
+              40 00 00 00 00 00 00 00
+  1178  
+  1179                                  // Carrega A na memoria enderecada por Y
+  1180  01c9  00 00 00 00 0a 80 20 00   LOOP_FILL:	{EYA,ESA,EAD,ESD,MW}		// Mem[Y]<--A {endereca memoria,saida de endereco,registrador para dados,saida de dados,memory write}
+              00 00 00 00 00 04 00 00
+  1181  
+  1182  01ca  00 00 00 00 00 00 00 82   		{INCY,DECX}			// {Y<--Y+1,X<--X-1}
+              00 00 00 00 00 00 00 00
+  1183  
+  1184                                  // Continua a copia enquanto X>0
+  1185  01cb  f4 01 cd 00 00 00 00 00   		{} JMP_XZERO FIM_FILLBLOCK
+              00 00 00 00 00 00 00 00
+  1186  01cc  c0 01 c9 00 00 00 00 00   		{} JMP LOOP_FILL
+              00 00 00 00 00 00 00 00
+  1187  
+  1188  01cd  c0 00 01 00 00 00 00 00   FIM_FILLBLOCK:	{} JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1189  
+  1190  
+  1191                                  //************************************************************
+  1192                                  // MOVBLOCK	; [10].
+  1193                                  // Copiar BC bytes a partir do endereco DE para o endereco HL.
+  1194                                  // Nao deixa efeitos colaterais em PSW, BC, DE e HL.
+  1195  
+  1196  0010  01ce                      MAP(10)	EQU I_MOVBLOCK
+  1197  
+  1198                                  // Implementacao; X conta bytes, Y=origem, Z=destino:
+  1199  
+  1200                                  // Carrega BC em X e pula para final se X==0
+  1201  01ce  00 00 00 00 00 00 00 04   I_MOVBLOCK:	{EBCHD,LXH}		// XH<--BCH {upperbyte para dados,carrega upperbyte}
+              00 00 80 00 00 00 00 00
+  1202  01cf  00 00 00 00 00 00 00 08   		{EBCLD,LXL}		// XL<--BCL {lowerbyte para dados,carrega lowerbyte}
+              00 01 00 00 00 00 00 00
+  1203  01d0  f4 01 da 00 00 00 00 00   		{} JMP_XZERO FIM_MOVBLOCK	// Pula para fim se X==0
+              00 00 00 00 00 00 00 00
+  1204  
+  1205                                  // Carrega DE em Y
+  1206  01d1  00 00 00 00 00 00 02 00   		{EDEHD,LYH}		// YH<--DEH {upperbyte para dados,carrega upperbyte}
+              00 40 00 00 00 00 00 00
+  1207  01d2  00 00 00 00 00 00 04 00   		{EDELD,LYL}		// YL<--DEL {lowerbyte para dados,carrega lowerbyte}
+              00 80 00 00 00 00 00 00
+  1208  
+  1209                                  // Carrega HL em Z
+  1210  01d3  00 00 00 00 00 01 00 00   		{EHLHD,LZH}		// ZH<--HLH {upperbyte para dados,carrega upperbyte}
+              20 00 00 00 00 00 00 00
+  1211  01d4  00 00 00 00 00 02 00 00   		{EHLLD,LZL}		// ZL<--HLL {lowerbyte para dados,carrega lowerbyte}
+              40 00 00 00 00 00 00 00
+  1212  
+  1213                                  // Carrega a memoria enderecada por Y em T1 e em seguida carrega T1 na memoria enderecada por Z
+  1214  01d5  00 00 00 00 07 00 20 00   LOOP_MOVBLOCK:	{EYA,ESA,EED,MR,LT1}	// T1<--Mem[Y] {endereca memoria,saida de endereco,entrada de dados,memory read,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1215  01d6  00 00 00 00 0a 90 00 00   		{EZA,ESA,ET1D,ESD,MW}	// Mem[Z]<--T1 {endereca memoria,saida de endereco,registrador para dados,saida de dados,memory write}
+              00 00 00 00 00 20 00 00
+  1216  
+  1217  01d7  00 00 00 00 00 00 40 82   		{INCY,INCZ,DECX}	// {Y<--Y+1,Z<--Z+1,X<--X-1}
+              00 00 00 00 00 00 00 00
+  1218  
+  1219                                  // Continua a copia enquanto X>0 
+  1220  01d8  f4 01 da 00 00 00 00 00   		{} JMP_XZERO FIM_MOVBLOCK
+              00 00 00 00 00 00 00 00
+  1221  01d9  c0 01 d5 00 00 00 00 00   		{} JMP LOOP_MOVBLOCK
+              00 00 00 00 00 00 00 00
+  1222  
+  1223  01da  c0 00 01 00 00 00 00 00   FIM_MOVBLOCK:	{} JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1224  
+  1225  
+  1226                                  //************************************************************
+  1227                                  // LONGADD	; [18].
+  1228                                  // Soma os numeros de C bytes apontados por HL e DE
+  1229                                  // e coloca o resultado a partir do endereço HL.
+  1230                                  // Os numeros são armazenados do byte mais significativo
+  1231                                  // para o menos significativo. Afeta apenas CARRY.
+  1232  
+  1233  0018  01db                      MAP(18)	EQU	I_LONGADD
+  1234  
+  1235                                  // Implementacao: X conta bytes, Y  e Z parcelas, Z soma:
+  1236  
+  1237                                  // Carrega constante em XH e C em XL e pula para final se X==0
+  1238  01db  00 00 00 00 00 00 00 04   I_LONGADD:	{EK,LXH}	// XH<--CTE {saida de constante,carrega upperbyte}
+              00 00 00 00 00 00 00 20
+  1239  01dc  00 00 00 00 00 00 00 08   		{EBCLD,LXL}	// XL<--BCL {lowerbyte para dados,carrega lowerbyte}
+              00 01 00 00 00 00 00 00
+  1240  01dd  f4 01 f8 00 00 00 00 00   		{}  JMP_XZERO FIM_LONGADD	// Pula para fim se X==0
+              00 00 00 00 00 00 00 00
+  1241  
+  1242                                  // Carrega DE em Y e HL em Z
+  1243  01de  00 00 00 00 00 00 02 00   		{EDEHD,LYH}	// YH<--DEH {upperbyte para dados,carrega upperbyte}
+              00 40 00 00 00 00 00 00
+  1244  01df  00 00 00 00 00 00 04 00   		{EDELD,LYL}	// YL<--DEL {lowerbyte para dados,carrega lowerbyte}
+              00 80 00 00 00 00 00 00
+  1245  01e0  00 00 00 00 00 01 00 00   		{EHLHD,LZH}	// ZH<--DEH {upperbyte para dados,carrega upperbyte}
+              20 00 00 00 00 00 00 00
+  1246  01e1  00 00 00 00 00 02 00 00   		{EHLLD,LZL}	// ZL<--DEL {lowerbyte para dados,carrega lowerbyte}
+              40 00 00 00 00 00 00 00
+  1247  
+  1248                                  // Desloca Y de X-1 para apontar para digito menos significativo
+  1249  01e2  00 00 00 00 00 00 00 20   		{EXLD,LT1}	// T1<--XL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1250  01e3  00 00 00 00 00 00 10 00   		{EYLD,LT2}	// T2<--YL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1251  01e4  00 00 00 00 00 00 04 00   		{ET1ULA,ET2ULA,EULA,LYL,LCARRY}	// ULA(T1,T2)=>T1+T2 {registrador para ULA,registrador para ULA,executa operacao,carrega lowerbyte,habilita carry}
+              00 00 00 00 02 40 08 01
+  1252  01e5  00 00 00 00 00 00 00 10   		{EXHD,LT1}	// T1<--XH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1253  01e6  00 00 00 00 00 00 08 00   		{EYHD,LT2}	// T2<--YH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1254  01e7  00 00 00 00 00 00 02 00   		{ET1ULA,ET2ULA,OP0,EULA,LYH}	// YH<--T1+T2+CARRY {registrador para ULA,registrador para ULA,habilita OP0,executa operacao,carrega upperbyte}
+              00 00 00 00 02 40 00 03
+  1255  01e8  00 00 00 00 00 00 01 00   		{DECY}		// {Y<--Y-1}
+              00 00 00 00 00 00 00 00
+  1256  
+  1257                                  // Desloca Z de X-1 para apontar para digito menos significativo
+  1258  01e9  00 00 00 00 00 00 00 20   		{EXLD,LT1}	// T1<--XL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1259  01ea  00 00 00 00 00 08 00 00   		{EZLD,LT2}	// T2<--ZL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1260  01eb  00 00 00 00 00 02 00 00   		{ET1ULA,ET2ULA,EULA,LZL,LCARRY}	// ULA(T1,T2)=>T1+T2 {registrador para ULA,registrador para ULA,executa operacao,carrega lowerbyte,habilita carry}
+              00 00 00 00 02 40 08 01
+  1261  01ec  00 00 00 00 00 00 00 10   		{EXHD,LT1}	// T1<--XH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1262  01ed  00 00 00 00 00 04 00 00   		{EZHD,LT2}	// T2<--ZH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1263  01ee  00 00 00 00 00 01 00 00   		{ET1ULA,ET2ULA,OP0,EULA,LZH}	// ZH<--T1+T2+CARRY {registrador para ULA,registrador para ULA,habilita OP0,executa operacao,carrega upperbyte}
+              00 00 00 00 02 40 00 03
+  1264  01ef  00 00 00 00 00 00 80 00   		{DECZ}		// {Z<--Z-1}
+              00 00 00 00 00 00 00 00
+  1265  
+  1266  01f0  00 00 00 00 00 00 00 00   		{CLEARCARRY}
+              00 00 00 00 00 00 01 00
+  1267                                  // Efetua loop da soma
+  1268  01f1  00 00 00 00 07 00 20 00   LOOP_LONGADD:	{EYA,ESA,EED,MR,LT1}	// T1<--Mem[Y] {endereca memoria,saida de endereco,entrada de dados,memory read,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1269  01f2  00 00 00 00 07 10 00 00   		{EZA,ESA,EED,MR,LT2}	// T2<--Mem[Z] {endereca memoria,saida de endereco,entrada de dados,memory read,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1270  
+  1271  01f3  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,OP0,EULA,LT3,LCARRY}	// T3<--T1+T2+CARRY {registrador para ULA,registrador para ULA,habilita OP0,executa operacao,carrega registrador,habilita carry}
+              00 00 00 00 22 40 08 03
+  1272  01f4  00 00 00 00 0a 90 00 00   		{EZA,ESA,ET3D,ESD,MW}	// Mem[Z]<--T3 {endereca memoria,saida de endereco,carrega registrador,saida de dados,memory write}
+              00 00 00 00 08 00 00 00
+  1273  
+  1274  01f5  00 00 00 00 00 00 81 02   		{DECY,DECZ,DECX}	// {Y<--Y-1,Z<--Z-1,X<--X-1}
+              00 00 00 00 00 00 00 00
+  1275  
+  1276  01f6  f4 01 f8 00 00 00 00 00   		{} JMP_XZERO FIM_LONGADD	// Pula para fim se X==0
+              00 00 00 00 00 00 00 00
+  1277  01f7  c0 01 f1 00 00 00 00 00   		{} JMP LOOP_LONGADD
+              00 00 00 00 00 00 00 00
+  1278  
+  1279  01f8  c0 00 01 00 00 00 00 00   FIM_LONGADD:	{} JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1280  
+  1281  
+  1282                                  //************************************************************
+  1283                                  // LONGSUB	; [20].
+  1284                                  // Subtrai o numero de C bytes apontado por DE 
+  1285                                  // do numero de C bytes apontado por HL e coloca o
+  1286                                  // o resultado a partir do endereço HL.
+  1287                                  // Os numeros são armazenados do byte mais significativo
+  1288                                  // para o menos significativo. Afeta apenas CARRY.
+  1289  
+  1290  0020  01f9                      MAP(20)	EQU	I_LONGSUB
+  1291  
+  1292                                  // Implementacao: X conta bytes, Y  e Z parcelas, Z subtrai:
+  1293  
+  1294                                  // Carrega constante em XH e C em XL e pula para final se X==0
+  1295  01f9  00 00 00 00 00 00 00 04   I_LONGSUB:	{EK,LXH}	// XH<--CTE {saida de constante,carrega upperbyte}
+              00 00 00 00 00 00 00 20
+  1296  01fa  00 00 00 00 00 00 00 08   		{EBCLD,LXL}	// XL<--BCL {lowerbyte para dados,carrega lowerbyte}
+              00 01 00 00 00 00 00 00
+  1297  01fb  f4 02 16 00 00 00 00 00   		{}  JMP_XZERO FIM_LONGSUB	// Pula para fim se X==0
+              00 00 00 00 00 00 00 00
+  1298  
+  1299                                  // Carrega DE em Y e HL em Z
+  1300  01fc  00 00 00 00 00 00 02 00   		{EDEHD,LYH}	// YH<--DEH {upperbyte para dados,carrega upperbyte}
+              00 40 00 00 00 00 00 00
+  1301  01fd  00 00 00 00 00 00 04 00   		{EDELD,LYL}	// YL<--DEL {lowerbyte para dados,carrega lowerbyte}
+              00 80 00 00 00 00 00 00
+  1302  01fe  00 00 00 00 00 01 00 00   		{EHLHD,LZH}	// ZH<--DEH {upperbyte para dados,carrega upperbyte}
+              20 00 00 00 00 00 00 00
+  1303  01ff  00 00 00 00 00 02 00 00   		{EHLLD,LZL}	// ZL<--DEL {lowerbyte para dados,carrega lowerbyte}
+              40 00 00 00 00 00 00 00
+  1304  
+  1305                                  // Desloca Y de X-1 para apontar para digito menos significativo
+  1306  0200  00 00 00 00 00 00 00 20   		{EXLD,LT1}	// T1<--XL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1307  0201  00 00 00 00 00 00 10 00   		{EYLD,LT2}	// T2<--YL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1308  0202  00 00 00 00 00 00 04 00   		{ET1ULA,ET2ULA,EULA,LYL,LCARRY}	// ULA(T1,T2)=>T1+T2 {registrador para ULA,registrador para ULA,executa operacao,carrega lowerbyte,habilita carry}
+              00 00 00 00 02 40 08 01
+  1309  0203  00 00 00 00 00 00 00 10   		{EXHD,LT1}	// T1<--XH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1310  0204  00 00 00 00 00 00 08 00   		{EYHD,LT2}	// T2<--YH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1311  0205  00 00 00 00 00 00 02 00   		{ET1ULA,ET2ULA,OP0,EULA,LYH}	// YH<--T1+T2+CARRY {registrador para ULA,registrador para ULA,habilita OP0,executa operacao,carrega upperbyte}
+              00 00 00 00 02 40 00 03
+  1312  0206  00 00 00 00 00 00 01 00   		{DECY}		// {Y<--Y-1}
+              00 00 00 00 00 00 00 00
+  1313  
+  1314                                  // Desloca Z de X-1 para apontar para digito menos significativo
+  1315  0207  00 00 00 00 00 00 00 20   		{EXLD,LT1}	// T1<--XL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1316  0208  00 00 00 00 00 08 00 00   		{EZLD,LT2}	// T2<--ZL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1317  0209  00 00 00 00 00 02 00 00   		{ET1ULA,ET2ULA,EULA,LZL,LCARRY}	// ULA(T1,T2)=>T1+T2 {registrador para ULA,registrador para ULA,executa operacao,carrega lowerbyte,habilita carry}
+              00 00 00 00 02 40 08 01
+  1318  020a  00 00 00 00 00 00 00 10   		{EXHD,LT1}	// T1<--XH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1319  020b  00 00 00 00 00 04 00 00   		{EZHD,LT2}	// T2<--ZH {lowerbyte para dados,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1320  020c  00 00 00 00 00 01 00 00   		{ET1ULA,ET2ULA,OP0,EULA,LZH}	// ZH<--T1+T2+CARRY {registrador para ULA,registrador para ULA,habilita OP0,executa operacao,carrega upperbyte}
+              00 00 00 00 02 40 00 03
+  1321  020d  00 00 00 00 00 00 80 00   		{DECZ}		// {Z<--Z-1}
+              00 00 00 00 00 00 00 00
+  1322  
+  1323  020e  00 00 00 00 00 00 00 00   		{CLEARCARRY}
+              00 00 00 00 00 00 01 00
+  1324                                  // Efetua loop da subtracao
+  1325  020f  00 00 00 00 07 00 20 00   LOOP_LONGSUB:	{EYA,ESA,EED,MR,LT1}	// T1<--Mem[Y] {endereca memoria,saida de endereco,entrada de dados,memory read,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1326  0210  00 00 00 00 07 10 00 00   		{EZA,ESA,EED,MR,LT2}	// T2<--Mem[Z] {endereca memoria,saida de endereco,entrada de dados,memory read,carrega registrador}
+              00 00 00 00 04 00 00 00
+  1327  
+  1328  0211  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA,OP0,OP1,EULA,LT3,LCARRY}	// T3<--T1-T2-CARRY {registrador para ULA,registrador para ULA,habilita OP0,habilita OP1,executa operacao,carrega registrador,habilita carry}
+              00 00 00 00 22 40 08 07
+  1329  0212  00 00 00 00 0a 90 00 00   		{EZA,ESA,ET3D,ESD,MW}	// Mem[Z]<--T3 {endereca memoria,saida de endereco,carrega registrador,saida de dados,memory write}
+              00 00 00 00 08 00 00 00
+  1330  
+  1331  0213  00 00 00 00 00 00 81 02   		{DECY,DECZ,DECX}	// {Y<--Y-1,Z<--Z-1,X<--X-1}
+              00 00 00 00 00 00 00 00
+  1332  
+  1333  0214  f4 02 16 00 00 00 00 00   		{} JMP_XZERO FIM_LONGSUB	// Pula para fim se X==0
+              00 00 00 00 00 00 00 00
+  1334  0215  c0 02 0f 00 00 00 00 00   		{} JMP LOOP_LONGSUB
+              00 00 00 00 00 00 00 00
+  1335  
+  1336  0216  c0 00 01 00 00 00 00 00   FIM_LONGSUB:	{} JMP BUSCA
+              00 00 00 00 00 00 00 00
+  1337  
+  1338                                  //************************************************************
+  1339                                  // JMP256	; [CB].
+  1340                                  // Salta para o endereco armazenado na
+  1341                                  // tabela de words apontada por HL+2*A.
+  1342                                  // A funciona como um indice na tabela, a qual
+  1343                                  // pode conter ate 256 enderecos.
+  1344                                  // Nao deixa efeitos colaterais em PSW, BC, DE e HL.
+  1345  
+  1346  00cb  0217                      MAP(0CB)	EQU	I_JMP256
+  1347  
+  1348  0217  00 00 00 00 00 00 00 00   I_JMP256:	{EFLAGS,LT3}		// T3<--FLAGS {saida de flags para dados,carrega registrador}
+              00 00 00 00 20 02 00 00
+  1349  
+  1350                                  // Carrega o dobro do valor do registrador A em X
+  1351  0218  00 00 00 00 00 00 00 00   		{EAD,LT2}		// T2<--A {registrador para dados,carrega registrador}
+              00 00 00 00 04 04 00 00
+  1352  0219  00 00 00 00 00 00 00 00    		{EAULA,ET2ULA}		// ULA(A,T2) {registrador para ULA,registrador para ULA}
+              00 00 00 00 02 08 00 00
+  1353  021a  00 00 00 00 00 00 00 08   		{EULA,LXL,LCARRY}	// XL<--A+T2 {executa operacao,carrega lowerbyte,habilita carry}
+              00 00 00 00 00 00 08 01
+  1354  021b  00 00 00 00 00 00 00 00   		{EK,LT1,LT2}		// T1<--CTE, T2<--CTE {saida de constante,carrega registrador,carrega registrador}
+              00 00 00 00 04 80 00 20
+  1355  021c  00 00 00 00 00 00 00 04   		{ET1ULA,ET2ULA,OP0,EULA,LXH}	// XH<--T1+T2+CARRY {registrador para ULA,registrador para ULA,habilita OP0,executa operacao,carrega upperbyte}
+              00 00 00 00 02 40 00 03
+  1356  
+  1357                                  // Carrega X + HL em X
+  1358  021d  00 00 00 00 00 00 00 20   		{EXLD,LT1}		// T1<--XL {lowerbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1359  021e  00 00 00 00 00 00 00 00   		{EHLLD,LT2}		// T2<--HL {lowerbyte para dados,carrega registrador}
+              40 00 00 00 04 00 00 00
+  1360  021f  00 00 00 00 00 00 00 00   		{ET1ULA,ET2ULA}		// ULA(T1,T2) {registrador para ULA,registrador para ULA}
+              00 00 00 00 02 40 00 00
+  1361  0220  00 00 00 00 00 00 00 08   		{EULA,LXL,LCARRY}	// XL<--ULA(T1,T2)=>T1+T2 {executa operacao,carrega lowerbyte,habilita carry}
+              00 00 00 00 00 00 08 01
+  1362  0221  00 00 00 00 00 00 00 10   		{EXHD,LT1}		// T1<--XH {upperbyte para dados,carrega registrador}
+              00 00 00 00 00 80 00 00
+  1363  0222  00 00 00 00 00 00 00 00   		{EHLHD,LT2}		// T2<--HL {upperbyte para dados,carrega registrador}
+              20 00 00 00 04 00 00 00
+  1364  0223  00 00 00 00 00 00 00 04   		{ET1ULA,ET2ULA,OP0,EULA,LXH}	// XH<--ULA(T1,T2)=>T1+T2+CARRY {registrador para ULA,registrador para ULA,habilita OP0,executa operacao,carrega upperbyte}
+              00 00 00 00 02 40 00 03
+  1365  
+  1366                                  // PCL <-- Mem[X]
+  1367                                  // PCH <-- Mem[X+1]
+  1368  0224  00 00 00 00 07 00 00 40   		{EXA,ESA,EED,MR,LPCL}	// PCL<--Mem[X] {endereca memoria,saida de endereco,entrada de dados,memory read,carrega lowerbyte}
+              00 00 00 80 00 00 00 00
+  1369  0225  00 00 00 00 00 00 00 01   		{INCX}			// {X<--X+1}
+              00 00 00 00 00 00 00 00
+  1370  0226  00 00 00 00 07 00 00 40   		{EXA,ESA,EED,MR,LPCH}	// PCH<--Mem[X] {endereca memoria,saida de endereco,entrada de dados,memory read,carrega lowerbyte}
+              00 00 00 40 00 00 00 00
+  1371  
+  1372                                  // Restaura FLAGS e vai para BUSCA
+  1373  0227  c0 00 01 00 00 00 00 00   		{ET3D,LFLAGS} JMP BUSCA
+              00 00 00 00 08 01 00 00
+  1374  
+  1375                                  //************************************************************
+  1376  
+
+
+Mapa de sinais:
+
+bit00 --> EULA                            
+bit01 --> OP0                             
+bit02 --> OP1                             
+bit03 --> OP2                             
+bit04 --> OP3                             
+bit05 --> EK                              
+bit06 --> SK0                             
+bit07 --> SK1                             
+bit08 --> CLEARCARRY                      
+bit09 --> SETCARRY                        
+bit10 --> CMC                             
+bit11 --> LCARRY                          
+bit12 --> LPARITY                         
+bit13 --> LACARRY                         
+bit14 --> LZERO                           
+bit15 --> LSIGNAL                         
+bit16 --> LFLAGS                          
+bit17 --> EFLAGS                          
+bit18 --> EAD                             
+bit19 --> EAULA                           
+bit20 --> LA                              
+bit21 --> ET1D                            
+bit22 --> ET1ULA                          
+bit23 --> LT1                             
+bit24 --> ET2D                            
+bit25 --> ET2ULA                          
+bit26 --> LT2                             
+bit27 --> ET3D                            
+bit28 --> ET3ULA                          
+bit29 --> LT3                             
+bit30 --> INCSP                           
+bit31 --> DECSP                           
+bit32 --> LSPH                            
+bit33 --> LSPL                            
+bit34 --> ESPHD                           
+bit35 --> ESPLD                           
+bit36 --> ESPA                            
+bit37 --> INCPC                           
+bit38 --> LPCH                            
+bit39 --> LPCL                            
+bit40 --> EPCHD                           
+bit41 --> EPCLD                           
+bit42 --> EPCA                            
+bit43 --> INCBC                           
+bit44 --> DECBC                           
+bit45 --> LBCH                            
+bit46 --> LBCL                            
+bit47 --> EBCHD                           
+bit48 --> EBCLD                           
+bit49 --> EBCA                            
+bit50 --> INCDE                           
+bit51 --> DECDE                           
+bit52 --> LDEH                            
+bit53 --> LDEL                            
+bit54 --> EDEHD                           
+bit55 --> EDELD                           
+bit56 --> EDEA                            
+bit57 --> INCHL                           
+bit58 --> DECHL                           
+bit59 --> LHLH                            
+bit60 --> LHLL                            
+bit61 --> EHLHD                           
+bit62 --> EHLLD                           
+bit63 --> EHLA                            
+bit64 --> INCX                            
+bit65 --> DECX                            
+bit66 --> LXH                             
+bit67 --> LXL                             
+bit68 --> EXHD                            
+bit69 --> EXLD                            
+bit70 --> EXA                             
+bit71 --> INCY                            
+bit72 --> DECY                            
+bit73 --> LYH                             
+bit74 --> LYL                             
+bit75 --> EYHD                            
+bit76 --> EYLD                            
+bit77 --> EYA                             
+bit78 --> INCZ                            
+bit79 --> DECZ                            
+bit80 --> LZH                             
+bit81 --> LZL                             
+bit82 --> EZHD                            
+bit83 --> EZLD                            
+bit84 --> EZA                             
+bit85 --> LI                              
+bit86 --> EID                             
+bit87 --> ESD                             
+bit88 --> EED                             
+bit89 --> ESA                             
+bit90 --> MR                              
+bit91 --> MW                              
+bit92 --> IOR                             
+bit93 --> IOW                             

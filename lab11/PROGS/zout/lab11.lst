@@ -1,0 +1,170 @@
+   1:				;*************************************************************************
+   2:				; lab11.ASM                                                              *
+   3:				;    Programa teste para as instruções implementadas:                    *
+   4:				;    - FILLBLOCK;                                                        *
+   5:				;    - MOVBLOCK;                                                         *
+   6:				;    - LONGADD;                                                          *
+   7:				;    - LONGSUB;                                                          *
+   8:				;    O programa assume um hardware dotado dos seguintes elementos:       *
+   9:				;                                                                        *
+  10:				;    - Processador MP8 (8080/8085 simile);                               *
+  11:				;    - ROM de 0000H a 1FFFh;                                             *
+  12:				;    - RAM de E000h a FFFFh;                                             *
+  13:				;    - UART 8250A vista nos enderecos 08H a 0Fh;                         *
+  14:				;    - PIO de entrada vista no endereço 00h;                             *
+  15:				;    - PIO de saída vista no endereço 00h.                               *
+  16:				;                                                                        *
+  17:				;    Para compilar e "linkar" o programa, pode ser usado o assembler     *
+  18:				;    "zmac", com a linha de comando:                                     *
+  19:				;                                                                        *
+  20:				;         "zmac -8 --oo lst,hex lab11.asm".                              *
+  21:				;                                                                        *
+  22:				;    zmac produzirá na pasta zout o arquivo "lab11.hex",                 *
+  23:				;    imagem do código executável a ser carregado no projeto Proteus      *
+  24:				;    e também o arquivo de listagem "lab11.lst".                         *
+  25:				;                                                                        *
+  26:				;*************************************************************************
+  27:				
+  28:				; Define origem da ROM e da RAM (este programa tem dois segmentos).
+  29:				; Diretivas nao podem comecar na primeira coluna.
+  30:				
+  31:     -	0000          	CODIGO		EQU	0000H
+  32:				
+  33:     -	E000          	DADOS		EQU	0E000H
+  34:				
+  35:     -	FFFF          	TOPO_RAM	EQU	0FFFFH
+  36:				
+  37:				;*******************************************
+  38:				; Definicao de macros para que zmac reconheca
+  39:				; novos mnemonicos de instrucao.
+  40:				;*******************************************
+  41:				
+  42:				FILLBLOCK	MACRO
+  43:						DB	08H
+  44:						ENDM	
+  45:				
+  46:				MOVBLOCK	MACRO
+  47:						DB	10H
+  48:						ENDM	
+  49:				
+  50:				LONGADD		MACRO
+  51:						DB	18H
+  52:						ENDM	
+  53:				
+  54:				LONGSUB		MACRO
+  55:						DB	20H
+  56:						ENDM
+  57:				
+  58:				;********************
+  59:				; Início do código  *
+  60:				;********************
+  61:				
+  62:     -	0000          		ORG	CODIGO
+  63:				
+  64:     -	0000          	INICIO:
+  65:				
+  66:				; Teste FILLBLOCK
+  67:				; Carrega a partir de DADOS o numero FFH (272) 20H (32) vezes          
+  68:    0+10	0000  012000  			LXI	B,020H
+  69:   10+10	0003  2100E0  			LXI	H,DADOS
+  70:   20+7	0006  3EFF    			MVI	A,0FFH
+  71:				
+  72:     -	0008  08      			FILLBLOCK	; Mem[HL..HL+BC]<--A
+  73:				
+  74:				; Teste MOVBLOCK
+  75:				; Copia o conteudo a partir de DADOS para as posicoes a partir DADOS+40H (64) 20H (32) vezes
+  76:   27+10	0009  1100E0  			LXI	D,DADOS
+  77:   37+10	000C  2140E0  			LXI	H,DADOS+040H
+  78:				
+  79:     -	000F  10      			MOVBLOCK	; Mem[HL..HL+BC]<--Mem[DE..DE+BC]
+  80:				
+  81:				; Teste LONGADD
+  82:				; Copia os numeros de 8 bytes ADD1 e ADD2 para as posicoes 80H...80H+7 e 80H+8...80H+15
+  83:				; Adiciona-os resultando no numero nas posicoes 80H+8...80H+15
+  84:   47+10	0010  010800  			LXI	B,8		; Carrega 8 em BC
+  85:   57+10	0013  114300  			LXI	D,ADD1		; Carrega o endereco do byte mais significativo de ADD1 em DE
+  86:   67+10	0016  2180E0  			LXI	H,ADDPOS1	; Carrega o endereco futuro do numero ADD1
+  87:     -	0019  10      			MOVBLOCK		; Copia ADD1 a partir do endereco ADDPOS1
+  88:				
+  89:   77+10	001A  114B00  			LXI	D,ADD2		; Carrega o endereco do byte mais significativo de ADD2 em DE
+  90:   87+10	001D  2188E0  			LXI	H,ADDPOS2	; Carrega o endereco futuro do numero ADD2
+  91:     -	0020  10      			MOVBLOCK		; Copia ADD2 a partir do endereco ADDPOS2
+  92:				
+  93:   97+10	0021  1180E0  			LXI	D,ADDPOS1	; Carrega o endereco do numero ADD1
+  94:  107+10	0024  2188E0  			LXI	H,ADDPOS2	; Carrega o endereco do numero ADD2
+  95:     -	0027  18      			LONGADD			; Soma ADD1 e ADD2 com resultado em ADDPOS2
+  96:				
+  97:				; Teste LONGSUB
+  98:				; Copia os numeros de 8 bytes SUB1 e SUB2 para as posicoes B0H...B0H+7 e B0H+8...B0H+15
+  99:				; Subtrai-os resultando no numero nas posicoes B0H+8...B0H+15
+ 100:  117+10	0028  010800  			LXI	B,8		; Carrega 8 em BC
+ 101:  127+10	002B  115300  			LXI	D,SUB1		; Carrega o endereco do byte mais significativo de SUB1 em DE
+ 102:  137+10	002E  21B0E0  			LXI	H,SUBPOS1	; Carrega o endereco futuro do numero SUB1
+ 103:     -	0031  10      			MOVBLOCK		; Copia SUB1 a partir do endereco SUBPOS1
+ 104:				
+ 105:  147+10	0032  115B00  			LXI	D,SUB2		; Carrega o endereco do byte mais significativo de SUB2 em DE
+ 106:  157+10	0035  21B8E0  			LXI	H,SUBPOS2	; Carrega o endereco futuro do numero SUB2
+ 107:     -	0038  10      			MOVBLOCK		; Copia SUB2 a partir do endereco SUBPOS2
+ 108:				
+ 109:  167+10	0039  11B0E0  			LXI	D,SUBPOS1	; Carrega o endereco do numero SUB1
+ 110:  177+10	003C  21B8E0  			LXI	H,SUBPOS2	; Carrega o endereco do numero SUB2
+ 111:     -	003F  20      			LONGSUB			; Soma SUB1 e SUB2 com resultado em SUBPOS2
+ 112:				
+ 113:  187+10	0040  C34000  	END_LOOP:	JMP	$
+ 114:				
+ 115:				; Define numeros para soma tal que Resultado = ADD1+ADD2
+ 116:     -	0043  00000000	ADD1:	DB	00H,00H,00H,00H,00H,0ABH,0CDH,0EFH		
+	              00ABCDEF
+ 117:     -	004B  00000000	ADD2:	DB	00H,00H,00H,00H,00H,0FEH,0DCH,0BAH
+	              00FEDCBA
+ 118:				; Resultado = 1AA AAA9
+ 119:				
+ 120:				; Define numeros para subtracao tal que Resultado = SUB1-SUB2
+ 121:     -	0053  00000000	SUB1:	DB	00H,00H,00H,00H,00H,0FEH,0DCH,0BAH	 
+	              00FEDCBA
+ 122:     -	005B  00000000	SUB2:	DB	00H,00H,00H,00H,00H,0ABH,0CDH,0EFH
+	              00ABCDEF
+ 123:				; Resultado = 53 0ECB
+ 124:				
+ 125:     -	E080          		ORG	DADOS+080H
+ 126:     -	E080          	ADDPOS1:	DS	8
+ 127:     -	E088          	ADDPOS2:	DS	8
+ 128:				
+ 129:     -	E0B0          		ORG	DADOS+0B0H
+ 130:     -	E0B0          	SUBPOS1:	DS	8
+ 131:     -	E0B8          	SUBPOS2:	DS	8
+ 132:				
+ 133:				 
+**** lab11.asm ****
+ 134:     -	0000          	        END	INICIO
+
+
+
+Statistics:
+
+     4	passes
+     0	jr promotions
+    13	symbols
+    99	bytes
+
+     8	macro calls
+    68	macro bytes
+     0	invented symbols
+
+
+
+Symbol Table:
+
+ADD1            43        67
+ADD2            4B        75
+ADDPOS1         E080      57472
+ADDPOS2         E088      57480
+CODIGO         =00        0
+DADOS          =E000      57344
+END_LOOP        40        64
+INICIO          00        0
+SUB1            53        83
+SUB2            5B        91
+SUBPOS1         E0B0      57520
+SUBPOS2         E0B8      57528
+TOPO_RAM       =FFFF      65535

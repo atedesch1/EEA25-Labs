@@ -1,0 +1,138 @@
+   1:				;*************************************************************************
+   2:				; testLONGADD.ASM                                                        *
+   3:				;                                                                        *
+   4:				;    Programa teste para a instrucão LONGADD.                            *
+   5:				;                                                                        *
+   6:				;    LONGADD nao FAZ PARTE DO CONJUNTO DE instrucoes do 8080/8085.       *
+   7:				;                                                                        *
+   8:				;    LONGADD é codifivada com o byte [18H].                              *
+   9:				;      Soma os numeros de C bytes apontados por HL e DE                  *
+  10:				;      e coloca o resultado a partir do endereço HL.                     *
+  11:				;      Os numeros são armazenados do byte mais significativo             *
+  12:				;      para o menos significativo. Afeta apenas CARRY.                   *
+  13:				;                                                                        *
+  14:				;    O programa assume um hardware dotado dos seguintes elementos:       *
+  15:				;                                                                        *
+  16:				;    - Processador MP8 (8080/8085 simile);                               *
+  17:				;    - ROM de 0000H a 1FFFh;                                             *
+  18:				;    - RAM de E000h a FFFFh;                                             *
+  19:				;    - UART 8250A vista nos enderecos 08H a 0Fh;                         *
+  20:				;    - PIO de entrada vista no endereço 00h;                             *
+  21:				;    - PIO de saída vista no endereço 00h.                               *
+  22:				;                                                                        *
+  23:				;    Para compilar e "linkar" o programa, pode ser usado o assembler     *
+  24:				;    "zmac", com a linha de comando:                                     *
+  25:				;                                                                        *
+  26:				;         "zmac -8 --oo lst,hex testlongadd.asm".                        *
+  27:				;                                                                        *
+  28:				;    zmac produzirá na pasta zout o arquivo "testlongadd.hex",           *
+  29:				;    imagem do código executável a ser carregado no projeto Proteus      *
+  30:				;    e também o arquivo de listagem "testlongadd.lst".                   *
+  31:				;                                                                        *
+  32:				;*************************************************************************
+  33:				
+  34:				; Define origem da ROM e da RAM (este programa tem dois segmentos).
+  35:				; Diretivas nao podem comecar na primeira coluna.
+  36:				
+  37:     -	0000          	CODIGO		EQU	0000H
+  38:				
+  39:     -	E000          	DADOS		EQU	0E000H
+  40:				
+  41:     -	FFFF          	TOPO_RAM	EQU	0FFFFH
+  42:				
+  43:				;*******************************************
+  44:				; Definicao de macros par que zmac reconheca
+  45:				; novos mnemonicos de instrucao.
+  46:				;*******************************************
+  47:				
+  48:				FILLBLOCK	MACRO
+  49:						DB	08H
+  50:						ENDM	
+  51:				
+  52:				MOVBLOCK	MACRO
+  53:						DB	10H
+  54:						ENDM	
+  55:				
+  56:				LONGADD		MACRO
+  57:						DB	18H
+  58:						ENDM	
+  59:				
+  60:				LONGSUB		MACRO
+  61:						DB	20H
+  62:						ENDM	
+  63:				
+  64:				
+  65:				LONGCMP		MACRO
+  66:						DB	28H
+  67:						ENDM	
+  68:				
+  69:				JMP256		MACRO
+  70:						DB	0CBH
+  71:						ENDM
+  72:				
+  73:				;********************
+  74:				; Início do código  *
+  75:				;********************
+  76:				
+  77:     -	0000          		ORG	CODIGO
+  78:				
+  79:    0+10	0000  010800  	INICIO:         LXI	B,8
+  80:   10+10	0003  112400  			LXI	D,CONSTANTE1
+  81:   20+10	0006  2100E0  			LXI	H,PARCELA1
+  82:     -	0009  10      			MOVBLOCK
+  83:				
+  84:   30+10	000A  112C00  			LXI	D,CONSTANTE2
+  85:   40+10	000D  2108E0  			LXI	H,PARCELA2
+  86:     -	0010  10      			MOVBLOCK
+  87:				
+  88:   50+10	0011  010800  			LXI	B,8
+  89:   60+10	0014  1100E0  			LXI	D,PARCELA1
+  90:   70+10	0017  2108E0  			LXI	H,PARCELA2
+  91:				
+  92:				; Efetua Mem[HL..HL+(C-1)]<--Mem[DE..DE+(C-1)]+Mem[HL..HL+(C-1)]
+  93:     -	001A  18      	REP_LONGADD:	LONGADD
+  94:   80+10	001B  C32100  			JMP	STOP_LONGADD
+  95:   90+10	001E  C31A00  			JMP	REP_LONGADD
+  96:				
+  97:  100+10	0021  C32100  	STOP_LONGADD:	JMP	$
+  98:				
+  99:				
+ 100:     -	0024  00000000	CONSTANTE1:	DB	00H,00H,00H,00H,00H,0ABH,0CDH,0EFH		
+	              00ABCDEF
+ 101:     -	002C  00000000	CONSTANTE2:	DB	00H,00H,00H,00H,00H,0FEH,0DCH,0BAH
+	              00FEDCBA
+ 102:				
+ 103:				
+ 104:     -	E000          		ORG	DADOS
+ 105:     -	E000          	PARCELA1:	DS	8
+ 106:     -	E008          	PARCELA2:	DS	8
+ 107:				
+ 108:     -	0000          	        END	INICIO
+
+
+
+Statistics:
+
+     4	passes
+     0	jr promotions
+    10	symbols
+    52	bytes
+
+     3	macro calls
+   103	macro bytes
+     0	invented symbols
+
+
+
+Symbol Table:
+
+CODIGO         =00        0
+CONSTANTE1      24        36
+CONSTANTE2      2C        44
+DADOS          =E000      57344
+INICIO          00        0
+PARCELA1        E000      57344
+PARCELA2        E008      57352
+REP_LONGADD     1A        26
+STOP_LONGADD    21        33
+TOPO_RAM       =FFFF      65535
